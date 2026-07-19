@@ -1,10 +1,12 @@
 import { z } from "zod";
 
+import { optionalMediaImagePathSchema } from "../../utils/media-path.js";
+
 export const createCategorySchema = z
   .object({
     name: z.string().trim().min(1).max(100),
     description: z.string().trim().max(2000).optional().nullable(),
-    imagePath: z.string().trim().max(500).optional().nullable(),
+    imagePath: optionalMediaImagePathSchema,
     displayOrder: z.coerce.number().int().min(0).max(9999).default(0),
     isVisible: z.boolean().default(true),
   })
@@ -14,7 +16,7 @@ export const updateCategorySchema = z
   .object({
     name: z.string().trim().min(1).max(100).optional(),
     description: z.string().trim().max(2000).optional().nullable(),
-    imagePath: z.string().trim().max(500).optional().nullable(),
+    imagePath: optionalMediaImagePathSchema,
     displayOrder: z.coerce.number().int().min(0).max(9999).optional(),
   })
   .strict()
@@ -37,4 +39,6 @@ export const categoryIdParamsSchema = z
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
-export type UpdateCategoryStatusInput = z.infer<typeof updateCategoryStatusSchema>;
+export type UpdateCategoryStatusInput = z.infer<
+  typeof updateCategoryStatusSchema
+>;

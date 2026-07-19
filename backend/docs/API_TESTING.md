@@ -17,9 +17,11 @@
 | `baseUrl` | `http://localhost:3000` |
 | `adminEmail` / `adminPassword` | Seeded admin (`admin@bazm.local` / `password`) |
 | `staffEmail` / `staffPassword` | Created by “Create staff” request |
+| `staffPasswordNew` | Used by “Reset staff password”; on success Postman copies it into `staffPassword` |
 | `accessToken` | Filled by “Login admin” test script |
 | `staffAccessToken` | Filled by “Login staff” |
 | `staffId`, `customerId`, `tableId`, `categoryId`, `productId`, `orderId`, `paymentId`, `guestOrderId` | Auto-saved from create responses |
+| `mediaPath` / `mediaUrl` / `productMediaPath` | Saved from **04b Media → Upload** |
 | `tableToken` | Opaque QR token for dine-in (see below) |
 
 Guest session cookie `bazm_guest_session` is HttpOnly. Postman stores it automatically when you call **Create takeaway/dine-in session** in the same collection runner/cookie jar.
@@ -92,7 +94,9 @@ npm run test:smoke
 | Method | Path | Notes |
 |--------|------|------|
 | GET/POST/PATCH | `/api/v1/staff`… | Staff CRUD |
+| PATCH | `/api/v1/staff/:staffId/password` | Admin resets staff password (revokes sessions) |
 | GET/PATCH | `/api/v1/settings` | Cafe tax & service charge % (PATCH admin only) |
+| POST/DELETE | `/api/v1/media` | Upload image (multipart `file`) / delete by `path` |
 | GET/POST/PATCH | `/api/v1/tables`… | Tables + QR |
 | GET/POST/PATCH/DELETE | `/api/v1/categories`… | Categories |
 | GET/POST/PATCH/DELETE | `/api/v1/products`… | Products + stock |

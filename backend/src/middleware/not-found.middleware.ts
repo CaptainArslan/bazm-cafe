@@ -6,11 +6,15 @@ export function notFoundMiddleware(
     request: Request,
     response: Response,
 ): Response {
+    const isUploadPath = request.path.startsWith('/uploads/');
+
     return response.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: 'API endpoint not found.',
+        message: isUploadPath
+            ? 'File not found.'
+            : 'API endpoint not found.',
         error: {
-            code: 'ROUTE_NOT_FOUND',
+            code: isUploadPath ? 'FILE_NOT_FOUND' : 'ROUTE_NOT_FOUND',
             method: request.method,
             path: request.originalUrl,
         },

@@ -1,3 +1,4 @@
+import { env } from "../../config/environment.js";
 import { HTTP_STATUS } from "../../constants/http-status.js";
 import { AppError } from "../../errors/app-error.js";
 import { slugify } from "../../utils/slug.js";
@@ -34,6 +35,8 @@ function toSafeCategory(category: {
     slug: category.slug,
     description: category.description,
     imagePath: category.imagePath,
+    imageUrl:
+      category.imagePath === null ? null : `${env.APP_URL}${category.imagePath}`,
     displayOrder: category.displayOrder,
     isVisible: category.isVisible,
     createdAt: category.createdAt,

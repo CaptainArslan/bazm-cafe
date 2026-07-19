@@ -20,6 +20,7 @@ import type {
   CreateStaffInput,
   ListStaffQuery,
   UpdateStaffInput,
+  UpdateStaffPasswordInput,
   UpdateStaffStatusInput,
 } from "./staff.validation.js";
 
@@ -28,6 +29,7 @@ function toSafeStaff(user: {
   name: string;
   email: string;
   phone: string | null;
+  imagePath: string | null;
   role: UserRole;
   isActive: boolean;
   lastLoginAt: Date | null;
@@ -47,6 +49,9 @@ function toSafeStaff(user: {
     name: user.name,
     email: user.email,
     phone: user.phone,
+    imagePath: user.imagePath,
+    imageUrl:
+      user.imagePath === null ? null : `${env.APP_URL}${user.imagePath}`,
     role: UserRole.STAFF,
     isActive: user.isActive,
     lastLoginAt: user.lastLoginAt,
@@ -103,6 +108,7 @@ export async function createStaffMember(
     name: input.name,
     email: input.email,
     phone: input.phone ?? null,
+    imagePath: input.imagePath ?? null,
     passwordHash,
   });
 
@@ -135,11 +141,6 @@ export async function updateStaffMember(
     }
   }
 
-  const passwordHash =
-    input.password === undefined
-      ? undefined
-      : await bcrypt.hash(input.password, env.BCRYPT_ROUNDS);
-
   const updated = await updateStaffUser(staff.id, {
     ...(input.name !== undefined && {
       name: input.name,
@@ -150,14 +151,44 @@ export async function updateStaffMember(
     ...(input.phone !== undefined && {
       phone: input.phone,
     }),
-    ...(passwordHash !== undefined && {
-      passwordHash,
+    ...(input.imagePath !== undefined && {
+      imagePath: input.imagePath,
     }),
   });
 
-  if (passwordHash !== undefined) {
-    await revokeStaffSessions(staff.id);
+  return toSafeStaff(updated);
+}
+
+export async function resetStaffMemberPassword(
+  staffId: string,
+  input: UpdateStaffPasswordInput,
+  actorUserId: bigint,
+): Promise<SafeStaff> {
+  const staff = await findStaffByUuid(staffId);
+
+  if (staff === null) {
+    throw new AppError(
+      STAFF_MESSAGES.NOT_FOUND,
+      HTTP_STATUS.NOT_FOUND,
+      "STAFF_NOT_FOUND",
+    );
   }
+
+  const passwordHash = await bcrypt.hash(input.password, env.BCRYPT_ROUNDS);
+
+  const updated = await updateStaffUser(staff.id, {
+    passwordHash,
+  });
+
+  await revokeStaffSessions(staff.id);
+
+  await writeAuditLog({
+    action: AUDIT_ACTIONS.STAFF_PASSWORD_RESET,
+    actorUserId,
+    entityType: "user",
+    entityId: staff.uuid,
+    metadata: { email: staff.email },
+  });
 
   return toSafeStaff(updated);
 }

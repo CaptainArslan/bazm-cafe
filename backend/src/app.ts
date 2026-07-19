@@ -2,6 +2,8 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { env } from './config/environment.js';
 import { errorHandlerMiddleware } from './middleware/error-handler.middleware.js';
@@ -10,11 +12,18 @@ import { notFoundMiddleware } from './middleware/not-found.middleware.js';
 import { apiRouter } from './routes/index.js';
 import { sendSuccess } from './utils/api-response.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const publicDir = path.resolve(__dirname, '../public');
+
 export const app = express();
 
 app.disable('x-powered-by');
 
-app.use(helmet());
+app.use(
+    helmet({
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+);
 
 app.use(
     cors({
@@ -40,7 +49,12 @@ app.use(
 
 app.use(cookieParser());
 
-app.use(express.static('public'));
+app.use(
+    express.static(publicDir, {
+        fallthrough: true,
+        index: false,
+    }),
+);
 
 app.get('/', (_request, response) => {
     return sendSuccess(response, {

@@ -1,4 +1,5 @@
 import { HTTP_STATUS } from "../../constants/http-status.js";
+import { env } from "../../config/environment.js";
 import { AppError } from "../../errors/app-error.js";
 import { Prisma } from "../../generated/prisma/client.js";
 import { OrderPaymentStatus } from "../../generated/prisma/enums.js";
@@ -26,6 +27,7 @@ function toSafeCustomer(customer: {
   uuid: string;
   name: string;
   phone: string | null;
+  imagePath: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): SafeCustomer {
@@ -33,6 +35,11 @@ function toSafeCustomer(customer: {
     id: customer.uuid,
     name: customer.name,
     phone: customer.phone,
+    imagePath: customer.imagePath,
+    imageUrl:
+      customer.imagePath === null
+        ? null
+        : `${env.APP_URL}${customer.imagePath}`,
     createdAt: customer.createdAt,
     updatedAt: customer.updatedAt,
   };
@@ -133,6 +140,7 @@ export async function createCustomerRecord(
   const customer = await createCustomer({
     name: input.name,
     phone,
+    imagePath: input.imagePath ?? null,
     createdByUserId,
   });
 
@@ -162,6 +170,9 @@ export async function updateCustomerRecord(
     }),
     ...(input.phone !== undefined && {
       phone: input.phone,
+    }),
+    ...(input.imagePath !== undefined && {
+      imagePath: input.imagePath,
     }),
   });
 

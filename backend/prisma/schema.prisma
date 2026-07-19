@@ -77,6 +77,7 @@ model User {
   name                String    @db.VarChar(100)
   email               String    @unique @db.VarChar(191)
   phone               String?   @db.VarChar(30)
+  imagePath           String?   @map("image_path") @db.VarChar(500)
   passwordHash        String    @map("password_hash") @db.VarChar(255)
   role                UserRole
   isActive            Boolean   @default(true) @map("is_active")
@@ -170,6 +171,7 @@ model Customer {
   uuid            String    @unique @default(uuid()) @db.Char(36)
   name            String    @db.VarChar(100)
   phone           String?   @db.VarChar(30)
+  imagePath       String?   @map("image_path") @db.VarChar(500)
   createdByUserId BigInt?   @map("created_by_user_id") @db.UnsignedBigInt
   createdAt       DateTime  @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.DateTime(3)

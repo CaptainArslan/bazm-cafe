@@ -10,12 +10,14 @@ import {
   getById,
   list,
   update,
+  updatePassword,
   updateStatus,
 } from "./staff.controller.js";
 import {
   createStaffSchema,
   listStaffQuerySchema,
   staffIdParamsSchema,
+  updateStaffPasswordSchema,
   updateStaffSchema,
   updateStaffStatusSchema,
 } from "./staff.validation.js";
@@ -47,6 +49,13 @@ staffRouter.patch(
   validate(staffIdParamsSchema, "params"),
   validate(updateStaffSchema),
   asyncHandler(update),
+);
+
+staffRouter.patch(
+  "/:staffId/password",
+  validate(staffIdParamsSchema, "params"),
+  validate(updateStaffPasswordSchema),
+  asyncHandler(updatePassword),
 );
 
 staffRouter.patch(

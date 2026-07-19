@@ -9,6 +9,7 @@ const customerSelect = {
   uuid: true,
   name: true,
   phone: true,
+  imagePath: true,
   createdAt: true,
   updatedAt: true,
   deletedAt: true,
@@ -78,12 +79,14 @@ export function listCustomers(filters: {
 export function createCustomer(data: {
   name: string;
   phone: string | null;
+  imagePath?: string | null;
   createdByUserId?: bigint | null;
 }) {
   return prisma.customer.create({
     data: {
       name: data.name,
       phone: data.phone,
+      imagePath: data.imagePath ?? null,
       ...(data.createdByUserId !== undefined &&
         data.createdByUserId !== null && {
           createdByUserId: data.createdByUserId,
@@ -98,6 +101,7 @@ export function updateCustomer(
   data: {
     name?: string;
     phone?: string | null;
+    imagePath?: string | null;
   },
 ) {
   return prisma.customer.update({
@@ -110,6 +114,9 @@ export function updateCustomer(
       }),
       ...(data.phone !== undefined && {
         phone: data.phone,
+      }),
+      ...(data.imagePath !== undefined && {
+        imagePath: data.imagePath,
       }),
     },
     select: customerSelect,

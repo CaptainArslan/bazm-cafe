@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import { useGuestSessionStore } from "../../stores/guest-session.store";
 
 const router = useRouter();
+const route = useRoute();
 const guestSessionStore = useGuestSessionStore();
 
 const checkingSession = ref(true);
@@ -18,6 +19,11 @@ onMounted(async () => {
 
   if (guestSessionStore.isActive) {
     await router.replace({ name: "customer.session" });
+    return;
+  }
+
+  if (route.query.manual === "1") {
+    showManualEntry.value = true;
   }
 });
 

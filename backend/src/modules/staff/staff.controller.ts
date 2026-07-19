@@ -1,11 +1,14 @@
 import type { Request, Response } from "express";
 
 import { HTTP_STATUS } from "../../constants/http-status.js";
+import { AppError } from "../../errors/app-error.js";
 import { sendSuccess } from "../../utils/api-response.js";
+import { AUTH_MESSAGES } from "../auth/auth.constants.js";
 import {
   createStaffMember,
   getStaffMember,
   listStaffMembers,
+  resetStaffMemberPassword,
   updateStaffMember,
   updateStaffMemberStatus,
 } from "./staff.service.js";
@@ -13,6 +16,7 @@ import type {
   CreateStaffInput,
   ListStaffQuery,
   UpdateStaffInput,
+  UpdateStaffPasswordInput,
   UpdateStaffStatusInput,
 } from "./staff.validation.js";
 
@@ -60,6 +64,32 @@ export async function update(request: Request, response: Response) {
 
   return sendSuccess(response, {
     message: "Staff member updated successfully.",
+    data: {
+      staff,
+    },
+  });
+}
+
+export async function updatePassword(request: Request, response: Response) {
+  if (request.user === undefined) {
+    throw new AppError(
+      AUTH_MESSAGES.AUTHENTICATION_REQUIRED,
+      HTTP_STATUS.UNAUTHORIZED,
+      "AUTHENTICATION_REQUIRED",
+    );
+  }
+
+  const { staffId } = request.params as { staffId: string };
+  const input = request.body as UpdateStaffPasswordInput;
+  const staff = await resetStaffMemberPassword(
+    staffId,
+    input,
+    request.user.databaseId,
+  );
+
+  return sendSuccess(response, {
+    message:
+      "Staff password updated successfully. Existing sessions were revoked.",
     data: {
       staff,
     },

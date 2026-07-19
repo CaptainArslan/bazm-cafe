@@ -12,6 +12,7 @@ import {
   paymentsRouter,
 } from "../modules/payments/index.js";
 import { productsRouter } from "../modules/products/index.js";
+import { mediaRouter } from "../modules/media/index.js";
 import { receiptsRouter } from "../modules/receipts/receipt.routes.js";
 import { settingsRouter } from "../modules/settings/index.js";
 import { staffRouter } from "../modules/staff/index.js";
@@ -33,6 +34,7 @@ apiRouter.use("/auth", authRouter);
 apiRouter.use("/staff", staffRouter);
 apiRouter.use("/customers", customersRouter);
 apiRouter.use("/tables", tablesRouter);
+apiRouter.use("/media", mediaRouter);
 apiRouter.use("/categories", categoriesRouter);
 apiRouter.use("/products", productsRouter);
 apiRouter.use("/settings", settingsRouter);

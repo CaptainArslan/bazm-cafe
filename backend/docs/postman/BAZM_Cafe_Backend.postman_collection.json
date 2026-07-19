@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "BAZM Cafe Backend API",
-    "description": "Import this collection AND BAZM_Cafe_Backend.local.postman_environment.json.\\n\\nSuggested order: Health → Auth login → Staff → Settings → Customers → Tables → Categories → Products → Guest TAKEAWAY → Orders ops → Payments.\\n\\nFor dine-in tableToken run: npx tsx scripts/create-postman-table.ts and paste values into the environment.",
+    "description": "Import this collection AND BAZM_Cafe_Backend.local.postman_environment.json.\\n\\nSuggested order: Health → Auth login → Media upload → Staff/Customers/Categories/Products (optional imagePath + preparationMinutes) → Tables → Guest TAKEAWAY → Orders → Payments.\\n\\nFor dine-in tableToken run: npx tsx scripts/create-postman-table.ts and paste tableId/tableNumber/tableToken into the environment (tableToken is the long QR secret, not the table id).\\n\\nImages (optional): POST /api/v1/media?folder=staff|customers|categories|products with form-data field `file`, then set `imagePath` on create/update to the returned `media.path`. Omit imagePath or send null/\\\"\\\" to skip.\\n\\nPrep time: set product `preparationMinutes`; guest order responses include `estimatedPreparationMinutes` and per-item `preparationTimeMinutesSnapshot`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -461,7 +461,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Kitchen Staff\",\n  \"email\": \"{{staffEmail}}\",\n  \"phone\": \"03001234567\",\n  \"password\": \"{{staffPassword}}\"\n}"
+              "raw": "{\n  \"name\": \"Kitchen Staff\",\n  \"email\": \"{{staffEmail}}\",\n  \"phone\": \"03001234567\",\n  \"password\": \"{{staffPassword}}\",\n  \"imagePath\": \"{{staffMediaPath}}\"\n}"
             }
           },
           "event": [
@@ -582,9 +582,61 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Kitchen Staff Updated\",\n  \"phone\": \"03007654321\"\n}"
+              "raw": "{\n  \"name\": \"Kitchen Staff Updated\",\n  \"phone\": \"03007654321\",\n  \"imagePath\": \"{{staffMediaPath}}\"\n}"
             }
           }
+        },
+        {
+          "name": "Reset staff password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/staff/{{staffId}}/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "staff",
+                "{{staffId}}",
+                "password"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{staffPasswordNew}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.environment.set('staffPassword', pm.environment.get('staffPasswordNew'));",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Deactivate staff",
@@ -702,7 +754,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ali Khan\",\n  \"phone\": \"03001112233\"\n}"
+              "raw": "{\n  \"name\": \"Ali Khan\",\n  \"phone\": \"03001112233\",\n  \"imagePath\": \"{{customerMediaPath}}\"\n}"
             }
           },
           "event": [
@@ -818,7 +870,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ali Khan Updated\"\n}"
+              "raw": "{\n  \"name\": \"Ali Khan Updated\",\n  \"imagePath\": \"{{customerMediaPath}}\"\n}"
             }
           }
         }
@@ -1077,6 +1129,294 @@
       ]
     },
     {
+      "name": "04b Media (ADMIN/STAFF)",
+      "item": [
+        {
+          "name": "Upload staff image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/media?folder=staff",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "media"
+              ],
+              "query": [
+                {
+                  "key": "folder",
+                  "value": "staff"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select a JPEG/PNG/WebP/GIF image in Postman"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.media) {",
+                  "    pm.environment.set('staffMediaPath', json.data.media.path);",
+                  "    pm.environment.set('mediaUrl', json.data.media.url);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload customer image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/media?folder=customers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "media"
+              ],
+              "query": [
+                {
+                  "key": "folder",
+                  "value": "customers"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select a JPEG/PNG/WebP/GIF image in Postman"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.media) {",
+                  "    pm.environment.set('customerMediaPath', json.data.media.path);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload category image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/media?folder=categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "media"
+              ],
+              "query": [
+                {
+                  "key": "folder",
+                  "value": "categories"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select a JPEG/PNG/WebP/GIF image in Postman"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.media) {",
+                  "    pm.environment.set('mediaPath', json.data.media.path);",
+                  "    pm.environment.set('mediaUrl', json.data.media.url);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload product image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/media?folder=products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "media"
+              ],
+              "query": [
+                {
+                  "key": "folder",
+                  "value": "products"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select a JPEG/PNG/WebP/GIF image in Postman"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.media) {",
+                  "    pm.environment.set('productMediaPath', json.data.media.path);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete media by path",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/media",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "media"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"path\": \"{{mediaPath}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "05 Categories (ADMIN)",
       "item": [
         {
@@ -1112,7 +1452,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Snacks\",\n  \"description\": \"Tea-time snacks\",\n  \"displayOrder\": 1,\n  \"isVisible\": true\n}"
+              "raw": "{\n  \"name\": \"Snacks\",\n  \"description\": \"Tea-time snacks\",\n  \"imagePath\": \"{{mediaPath}}\",\n  \"displayOrder\": 1,\n  \"isVisible\": true\n}"
             }
           },
           "event": [
@@ -1226,6 +1566,44 @@
           }
         },
         {
+          "name": "Attach category image",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "{{categoryId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imagePath\": \"{{mediaPath}}\"\n}"
+            }
+          }
+        },
+        {
           "name": "Update category status",
           "request": {
             "method": "PATCH",
@@ -1302,7 +1680,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"categoryId\": \"{{categoryId}}\",\n  \"name\": \"Aloo Samosa\",\n  \"description\": \"Crispy potato samosa\",\n  \"price\": 80,\n  \"stockQuantity\": 40,\n  \"trackStock\": true,\n  \"isAvailable\": true,\n  \"displayOrder\": 1\n}"
+              "raw": "{\n  \"categoryId\": \"{{categoryId}}\",\n  \"name\": \"Aloo Samosa\",\n  \"description\": \"Crispy potato samosa\",\n  \"imagePath\": \"{{productMediaPath}}\",\n  \"price\": 80,\n  \"preparationMinutes\": 15,\n  \"stockQuantity\": 40,\n  \"trackStock\": true,\n  \"isAvailable\": true,\n  \"displayOrder\": 1\n}"
             }
           },
           "event": [
@@ -1411,7 +1789,45 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"price\": 90\n}"
+              "raw": "{\n  \"price\": 90,\n  \"preparationMinutes\": 15\n}"
+            }
+          }
+        },
+        {
+          "name": "Attach product image",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imagePath\": \"{{productMediaPath}}\"\n}"
             }
           }
         },

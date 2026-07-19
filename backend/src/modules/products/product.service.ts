@@ -1,3 +1,4 @@
+import { env } from "../../config/environment.js";
 import { HTTP_STATUS } from "../../constants/http-status.js";
 import { AppError } from "../../errors/app-error.js";
 import { Prisma } from "../../generated/prisma/client.js";
@@ -49,6 +50,8 @@ function toSafeProduct(product: {
     slug: product.slug,
     description: product.description,
     imagePath: product.imagePath,
+    imageUrl:
+      product.imagePath === null ? null : `${env.APP_URL}${product.imagePath}`,
     price: toMoneyString(product.price),
     preparationMinutes: product.preparationMinutes,
     stockQuantity: product.stockQuantity,

@@ -133,6 +133,12 @@ Validate the schema:
 npx prisma validate
 ```
 
+Generate Prisma Client:
+
+```powershell
+npx prisma generate
+```
+
 Create a development migration:
 
 ```powershell
@@ -145,16 +151,10 @@ Create a migration without applying it:
 npx prisma migrate dev --name migration_name --create-only
 ```
 
-Apply existing production migrations:
+Apply existing migrations (keeps data):
 
 ```powershell
 npx prisma migrate deploy
-```
-
-Generate Prisma Client:
-
-```powershell
-npx prisma generate
 ```
 
 Check migration status:
@@ -169,6 +169,44 @@ Open Prisma Studio:
 npx prisma studio
 ```
 
+### Seed (admin only)
+
+```powershell
+npm run db:seed
+```
+
+Same command:
+
+```powershell
+npx prisma db seed
+```
+
+Creates / upserts:
+
+- Admin user: `admin@bazm.local` / `password`
+- Cafe settings singleton (tax / service charge default `0`)
+
+Does **not** seed staff, tables, categories, products, orders, or other demo data.
+
+### Refresh database for local testing
+
+**Destructive.** Drops the database, recreates it, applies **all** migrations, then you re-seed:
+
+```powershell
+npx prisma migrate reset --force
+npm run db:seed
+```
+
+Useful when you want a clean slate to re-test Postman / guest flows.
+
+| Goal | Commands |
+|---|---|
+| First-time setup | `npx prisma generate` → `npx prisma migrate deploy` → `npm run db:seed` |
+| Apply new migrations only | `npx prisma migrate deploy` |
+| Wipe everything and start fresh | `npx prisma migrate reset --force` → `npm run db:seed` |
+| Re-seed admin without wipe | `npm run db:seed` |
+
+**Never** run `npx prisma migrate reset` against production.
 ## Existing migrations
 
 ### Authentication migration
@@ -318,26 +356,26 @@ stock_movements
 
 ## Migration safety
 
-Development:
+Development — create/apply migrations interactively:
 
 ```powershell
 npx prisma migrate dev
 ```
 
-Production:
+Apply pending migrations without resetting data:
 
 ```powershell
 npx prisma migrate deploy
 ```
 
-Do not run the following command against production:
+Full local wipe + re-migrate (then seed):
 
 ```powershell
-npx prisma migrate reset
+npx prisma migrate reset --force
+npm run db:seed
 ```
 
-It deletes and recreates the database.
-
+Do **not** run `migrate reset` against production — it deletes and recreates the database.
 
 ## Notes
 

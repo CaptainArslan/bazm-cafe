@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { optionalMediaImagePathSchema } from "../../utils/media-path.js";
+
 const nameSchema = z
   .string()
   .trim()
@@ -17,6 +19,7 @@ export const createCustomerSchema = z
   .object({
     name: nameSchema,
     phone: phoneSchema.optional(),
+    imagePath: optionalMediaImagePathSchema,
   })
   .strict();
 
@@ -24,14 +27,19 @@ export const updateCustomerSchema = z
   .object({
     name: nameSchema.optional(),
     phone: phoneSchema.optional().nullable(),
+    imagePath: optionalMediaImagePathSchema,
   })
   .strict()
   .refine(
-    (data) => data.name !== undefined || data.phone !== undefined,
+    (data) =>
+      data.name !== undefined ||
+      data.phone !== undefined ||
+      data.imagePath !== undefined,
     {
       message: "At least one field must be provided.",
     },
   );
+
 
 export const customerIdParamsSchema = z
   .object({

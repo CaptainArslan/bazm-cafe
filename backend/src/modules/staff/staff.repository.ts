@@ -7,6 +7,7 @@ const staffSelect = {
   name: true,
   email: true,
   phone: true,
+  imagePath: true,
   role: true,
   isActive: true,
   lastLoginAt: true,
@@ -80,6 +81,7 @@ export function createStaffUser(data: {
   name: string;
   email: string;
   phone: string | null;
+  imagePath: string | null;
   passwordHash: string;
 }) {
   return prisma.user.create({
@@ -87,6 +89,7 @@ export function createStaffUser(data: {
       name: data.name,
       email: data.email,
       phone: data.phone,
+      imagePath: data.imagePath,
       passwordHash: data.passwordHash,
       role: UserRole.STAFF,
       isActive: true,
@@ -102,6 +105,7 @@ export function updateStaffUser(
     name?: string;
     email?: string;
     phone?: string | null;
+    imagePath?: string | null;
     passwordHash?: string;
   },
 ) {
@@ -118,6 +122,9 @@ export function updateStaffUser(
       }),
       ...(data.phone !== undefined && {
         phone: data.phone,
+      }),
+      ...(data.imagePath !== undefined && {
+        imagePath: data.imagePath,
       }),
       ...(data.passwordHash !== undefined && {
         passwordHash: data.passwordHash,

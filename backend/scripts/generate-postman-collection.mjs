@@ -6,9 +6,10 @@ function req(name, method, path, opts = {}) {
     name,
     request: {
       method,
-      header: opts.body
-        ? [{ key: "Content-Type", value: "application/json" }]
-        : [],
+      header:
+        opts.body && !opts.formData
+          ? [{ key: "Content-Type", value: "application/json" }]
+          : [],
       url: {
         raw: `{{baseUrl}}${path}`,
         host: ["{{baseUrl}}"],
@@ -28,7 +29,12 @@ function req(name, method, path, opts = {}) {
         .join("&");
   }
 
-  if (opts.body) {
+  if (opts.formData) {
+    item.request.body = {
+      mode: "formdata",
+      formdata: opts.formData,
+    };
+  } else if (opts.body) {
     item.request.body = {
       mode: "raw",
       raw: JSON.stringify(opts.body, null, 2),
@@ -85,7 +91,7 @@ const collection = {
   info: {
     name: "BAZM Cafe Backend API",
     description:
-      "Import this collection AND BAZM_Cafe_Backend.local.postman_environment.json.\\n\\nSuggested order: Health → Auth login → Staff → Settings → Customers → Tables → Categories → Products → Guest TAKEAWAY → Orders ops → Payments.\\n\\nFor dine-in tableToken run: npx tsx scripts/create-postman-table.ts and paste values into the environment.",
+      "Import this collection AND BAZM_Cafe_Backend.local.postman_environment.json.\\n\\nSuggested order: Health → Auth login → Media upload → Staff/Customers/Categories/Products (optional imagePath + preparationMinutes) → Tables → Guest TAKEAWAY → Orders → Payments.\\n\\nFor dine-in tableToken run: npx tsx scripts/create-postman-table.ts and paste tableId/tableNumber/tableToken into the environment (tableToken is the long QR secret, not the table id).\\n\\nImages (optional): POST /api/v1/media?folder=staff|customers|categories|products with form-data field `file`, then set `imagePath` on create/update to the returned `media.path`. Omit imagePath or send null/\\\"\\\" to skip.\\n\\nPrep time: set product `preparationMinutes`; guest order responses include `estimatedPreparationMinutes` and per-item `preparationTimeMinutesSnapshot`.",
     schema:
       "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
   },
@@ -165,6 +171,7 @@ const collection = {
             email: "{{staffEmail}}",
             phone: "03001234567",
             password: "{{staffPassword}}",
+            imagePath: "{{staffMediaPath}}",
           },
           save: [
             "if (pm.response.code === 201) {",
@@ -183,7 +190,20 @@ const collection = {
         req("Get staff", "GET", "/api/v1/staff/{{staffId}}", { auth: "admin" }),
         req("Update staff", "PATCH", "/api/v1/staff/{{staffId}}", {
           auth: "admin",
-          body: { name: "Kitchen Staff Updated", phone: "03007654321" },
+          body: {
+            name: "Kitchen Staff Updated",
+            phone: "03007654321",
+            imagePath: "{{staffMediaPath}}",
+          },
+        }),
+        req("Reset staff password", "PATCH", "/api/v1/staff/{{staffId}}/password", {
+          auth: "admin",
+          body: { password: "{{staffPasswordNew}}" },
+          save: [
+            "if (pm.response.code === 200) {",
+            "  pm.environment.set('staffPassword', pm.environment.get('staffPasswordNew'));",
+            "}",
+          ],
         }),
         req("Deactivate staff", "PATCH", "/api/v1/staff/{{staffId}}/status", {
           auth: "admin",
@@ -200,7 +220,11 @@ const collection = {
       item: [
         req("Create customer", "POST", "/api/v1/customers", {
           auth: "admin",
-          body: { name: "Ali Khan", phone: "03001112233" },
+          body: {
+            name: "Ali Khan",
+            phone: "03001112233",
+            imagePath: "{{customerMediaPath}}",
+          },
           save: [
             "if (pm.response.code === 201) {",
             "  const json = pm.response.json();",
@@ -217,7 +241,10 @@ const collection = {
         }),
         req("Update customer", "PATCH", "/api/v1/customers/{{customerId}}", {
           auth: "admin",
-          body: { name: "Ali Khan Updated" },
+          body: {
+            name: "Ali Khan Updated",
+            imagePath: "{{customerMediaPath}}",
+          },
         }),
       ],
     },
@@ -254,6 +281,97 @@ const collection = {
       ],
     },
     {
+      name: "04b Media (ADMIN/STAFF)",
+      item: [
+        req("Upload staff image", "POST", "/api/v1/media", {
+          auth: "admin",
+          query: [{ key: "folder", value: "staff" }],
+          formData: [
+            {
+              key: "file",
+              type: "file",
+              src: [],
+              description: "Select a JPEG/PNG/WebP/GIF image in Postman",
+            },
+          ],
+          save: [
+            "if (pm.response.code === 201) {",
+            "  const json = pm.response.json();",
+            "  if (json.data && json.data.media) {",
+            "    pm.environment.set('staffMediaPath', json.data.media.path);",
+            "    pm.environment.set('mediaUrl', json.data.media.url);",
+            "  }",
+            "}",
+          ],
+        }),
+        req("Upload customer image", "POST", "/api/v1/media", {
+          auth: "admin",
+          query: [{ key: "folder", value: "customers" }],
+          formData: [
+            {
+              key: "file",
+              type: "file",
+              src: [],
+              description: "Select a JPEG/PNG/WebP/GIF image in Postman",
+            },
+          ],
+          save: [
+            "if (pm.response.code === 201) {",
+            "  const json = pm.response.json();",
+            "  if (json.data && json.data.media) {",
+            "    pm.environment.set('customerMediaPath', json.data.media.path);",
+            "  }",
+            "}",
+          ],
+        }),
+        req("Upload category image", "POST", "/api/v1/media", {
+          auth: "admin",
+          query: [{ key: "folder", value: "categories" }],
+          formData: [
+            {
+              key: "file",
+              type: "file",
+              src: [],
+              description: "Select a JPEG/PNG/WebP/GIF image in Postman",
+            },
+          ],
+          save: [
+            "if (pm.response.code === 201) {",
+            "  const json = pm.response.json();",
+            "  if (json.data && json.data.media) {",
+            "    pm.environment.set('mediaPath', json.data.media.path);",
+            "    pm.environment.set('mediaUrl', json.data.media.url);",
+            "  }",
+            "}",
+          ],
+        }),
+        req("Upload product image", "POST", "/api/v1/media", {
+          auth: "admin",
+          query: [{ key: "folder", value: "products" }],
+          formData: [
+            {
+              key: "file",
+              type: "file",
+              src: [],
+              description: "Select a JPEG/PNG/WebP/GIF image in Postman",
+            },
+          ],
+          save: [
+            "if (pm.response.code === 201) {",
+            "  const json = pm.response.json();",
+            "  if (json.data && json.data.media) {",
+            "    pm.environment.set('productMediaPath', json.data.media.path);",
+            "  }",
+            "}",
+          ],
+        }),
+        req("Delete media by path", "DELETE", "/api/v1/media", {
+          auth: "admin",
+          body: { path: "{{mediaPath}}" },
+        }),
+      ],
+    },
+    {
       name: "05 Categories (ADMIN)",
       item: [
         req("Create category", "POST", "/api/v1/categories", {
@@ -261,6 +379,7 @@ const collection = {
           body: {
             name: "Snacks",
             description: "Tea-time snacks",
+            imagePath: "{{mediaPath}}",
             displayOrder: 1,
             isVisible: true,
           },
@@ -279,6 +398,10 @@ const collection = {
           auth: "admin",
           body: { description: "Updated snacks" },
         }),
+        req("Attach category image", "PATCH", "/api/v1/categories/{{categoryId}}", {
+          auth: "admin",
+          body: { imagePath: "{{mediaPath}}" },
+        }),
         req("Update category status", "PATCH", "/api/v1/categories/{{categoryId}}/status", {
           auth: "admin",
           body: { isVisible: true },
@@ -294,7 +417,9 @@ const collection = {
             categoryId: "{{categoryId}}",
             name: "Aloo Samosa",
             description: "Crispy potato samosa",
+            imagePath: "{{productMediaPath}}",
             price: 80,
+            preparationMinutes: 15,
             stockQuantity: 40,
             trackStock: true,
             isAvailable: true,
@@ -313,7 +438,14 @@ const collection = {
         }),
         req("Update product", "PATCH", "/api/v1/products/{{productId}}", {
           auth: "admin",
-          body: { price: 90 },
+          body: {
+            price: 90,
+            preparationMinutes: 15,
+          },
+        }),
+        req("Attach product image", "PATCH", "/api/v1/products/{{productId}}", {
+          auth: "admin",
+          body: { imagePath: "{{productMediaPath}}" },
         }),
         req("Update product status", "PATCH", "/api/v1/products/{{productId}}/status", {
           auth: "admin",

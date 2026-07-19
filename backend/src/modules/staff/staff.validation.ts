@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { optionalMediaImagePathSchema } from "../../utils/media-path.js";
+
 const emailSchema = z
   .string()
   .trim()
@@ -36,6 +38,7 @@ export const createStaffSchema = z
     email: emailSchema,
     phone: phoneSchema,
     password: passwordSchema,
+    imagePath: optionalMediaImagePathSchema,
   })
   .strict();
 
@@ -44,7 +47,7 @@ export const updateStaffSchema = z
     name: nameSchema.optional(),
     email: emailSchema.optional(),
     phone: phoneSchema,
-    password: passwordSchema.optional(),
+    imagePath: optionalMediaImagePathSchema,
   })
   .strict()
   .refine(
@@ -52,11 +55,17 @@ export const updateStaffSchema = z
       data.name !== undefined ||
       data.email !== undefined ||
       data.phone !== undefined ||
-      data.password !== undefined,
+      data.imagePath !== undefined,
     {
       message: "At least one field must be provided.",
     },
   );
+
+export const updateStaffPasswordSchema = z
+  .object({
+    password: passwordSchema,
+  })
+  .strict();
 
 export const updateStaffStatusSchema = z
   .object({
@@ -88,5 +97,6 @@ export const listStaffQuerySchema = z
 
 export type CreateStaffInput = z.infer<typeof createStaffSchema>;
 export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;
+export type UpdateStaffPasswordInput = z.infer<typeof updateStaffPasswordSchema>;
 export type UpdateStaffStatusInput = z.infer<typeof updateStaffStatusSchema>;
 export type ListStaffQuery = z.infer<typeof listStaffQuerySchema>;

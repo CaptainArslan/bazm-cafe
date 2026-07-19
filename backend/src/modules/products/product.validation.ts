@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { optionalMediaImagePathSchema } from "../../utils/media-path.js";
+
 const moneySchema = z
   .union([z.string(), z.number()])
   .transform((value) => Number(value))
@@ -12,7 +14,7 @@ export const createProductSchema = z
     categoryId: z.string().uuid(),
     name: z.string().trim().min(1).max(150),
     description: z.string().trim().max(2000).optional().nullable(),
-    imagePath: z.string().trim().max(500).optional().nullable(),
+    imagePath: optionalMediaImagePathSchema,
     price: moneySchema,
     preparationMinutes: z.coerce.number().int().min(0).max(600).default(0),
     stockQuantity: z.coerce.number().int().min(0).default(0),
@@ -28,7 +30,7 @@ export const updateProductSchema = z
     categoryId: z.string().uuid().optional(),
     name: z.string().trim().min(1).max(150).optional(),
     description: z.string().trim().max(2000).optional().nullable(),
-    imagePath: z.string().trim().max(500).optional().nullable(),
+    imagePath: optionalMediaImagePathSchema,
     price: moneySchema.optional(),
     preparationMinutes: z.coerce.number().int().min(0).max(600).optional(),
     lowStockThreshold: z.coerce.number().int().min(0).optional(),
@@ -66,5 +68,7 @@ export const productIdParamsSchema = z
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
-export type UpdateProductStatusInput = z.infer<typeof updateProductStatusSchema>;
+export type UpdateProductStatusInput = z.infer<
+  typeof updateProductStatusSchema
+>;
 export type AdjustProductStockInput = z.infer<typeof adjustProductStockSchema>;

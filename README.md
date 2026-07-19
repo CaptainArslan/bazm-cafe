@@ -52,6 +52,29 @@ npm run db:seed        # creates the seeded admin (admin@bazm.local / password)
 npm run dev             # http://localhost:3000
 ```
 
+#### Refresh the database (local / test only)
+
+Wipes all data, re-applies every migration, then seeds only the admin (+ cafe settings defaults):
+
+```bash
+cd backend
+npx prisma migrate reset --force
+npm run db:seed
+```
+
+If reset already ran the seed (check console output), you can skip `npm run db:seed`.
+
+| Command | What it does |
+|---|---|
+| `npx prisma generate` | Generate Prisma Client from `schema.prisma` |
+| `npx prisma migrate deploy` | Apply pending migrations (keeps existing data) |
+| `npx prisma migrate status` | Show which migrations are applied |
+| `npx prisma migrate reset --force` | **Drop DB**, recreate, apply all migrations (destructive) |
+| `npm run db:seed` | Seed admin only: `admin@bazm.local` / `password` |
+| `npx prisma db seed` | Same as `npm run db:seed` |
+| `npx prisma studio` | Browse tables in the browser |
+
+**Never** run `migrate reset` against production.
 ### Frontend
 
 ```bash

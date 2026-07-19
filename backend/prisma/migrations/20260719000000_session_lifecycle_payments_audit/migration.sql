@@ -1,6 +1,22 @@
--- Columns already applied by the failed partial run; continue from indexes/tables/FKs.
+-- AlterTable guest_sessions
+ALTER TABLE `guest_sessions`
+    ADD COLUMN `closure_type` ENUM('CLOSED', 'EXPIRED', 'FORCE_CLOSED') NULL,
+    ADD COLUMN `closed_by_user_id` BIGINT UNSIGNED NULL,
+    ADD COLUMN `closure_reason` TEXT NULL;
 
-CREATE TABLE IF NOT EXISTS `guest_session_recovery_codes` (
+-- AlterTable restaurant_tables
+ALTER TABLE `restaurant_tables`
+    ADD COLUMN `active_guest_session_id` BIGINT UNSIGNED NULL;
+
+-- AlterTable payments
+ALTER TABLE `payments`
+    ADD COLUMN `idempotency_key` VARCHAR(100) NULL,
+    ADD COLUMN `voided_at` DATETIME(3) NULL,
+    ADD COLUMN `void_reason` TEXT NULL,
+    ADD COLUMN `voided_by_user_id` BIGINT UNSIGNED NULL;
+
+-- CreateTable guest_session_recovery_codes
+CREATE TABLE `guest_session_recovery_codes` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL,
     `guest_session_id` BIGINT UNSIGNED NOT NULL,
@@ -19,7 +35,8 @@ CREATE TABLE IF NOT EXISTS `guest_session_recovery_codes` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `receipt_access_tokens` (
+-- CreateTable receipt_access_tokens
+CREATE TABLE `receipt_access_tokens` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL,
     `token_hash` CHAR(64) NOT NULL,
@@ -35,7 +52,8 @@ CREATE TABLE IF NOT EXISTS `receipt_access_tokens` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `audit_logs` (
+-- CreateTable audit_logs
+CREATE TABLE `audit_logs` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL,
     `action` VARCHAR(80) NOT NULL,
@@ -56,6 +74,7 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Indexes
 CREATE INDEX `guest_sessions_activity_idx` ON `guest_sessions`(`last_activity_at`, `closed_at`);
 CREATE INDEX `guest_sessions_closed_by_idx` ON `guest_sessions`(`closed_by_user_id`);
 
@@ -63,6 +82,7 @@ CREATE UNIQUE INDEX `restaurant_tables_active_guest_session_id_key` ON `restaura
 CREATE UNIQUE INDEX `payments_idempotency_key_key` ON `payments`(`idempotency_key`);
 CREATE INDEX `payments_voided_by_idx` ON `payments`(`voided_by_user_id`);
 
+-- Foreign keys
 ALTER TABLE `guest_sessions`
     ADD CONSTRAINT `guest_sessions_closed_by_user_id_fkey`
     FOREIGN KEY (`closed_by_user_id`) REFERENCES `users`(`id`)

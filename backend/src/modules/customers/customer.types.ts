@@ -2,6 +2,8 @@ export type SafeCustomer = {
   id: string;
   name: string;
   phone: string | null;
+  imagePath: string | null;
+  imageUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 };

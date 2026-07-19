@@ -6,6 +6,7 @@ export type SafeProduct = {
   slug: string;
   description: string | null;
   imagePath: string | null;
+  imageUrl: string | null;
   price: string;
   preparationMinutes: number;
   stockQuantity: number;
