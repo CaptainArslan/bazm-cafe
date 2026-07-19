@@ -9,7 +9,7 @@ function buildSocket(): Socket {
     withCredentials: true,
     autoConnect: false,
     transports: ["websocket", "polling"],
-    auth: authToken ? { token: authToken } : {},
+    ...(authToken ? { auth: { token: authToken } } : {}),
   });
 }
 
@@ -42,11 +42,14 @@ export function setSocketAuthToken(token: string | null): void {
   }
   authToken = token;
 
-  const wasConnected = socket?.connected ?? false;
-  socket?.disconnect();
-  socket = buildSocket();
+  if (!socket) {
+    return;
+  }
 
-  if (wasConnected) {
+  socket.auth = authToken ? { token: authToken } : {};
+
+  if (socket.connected) {
+    socket.disconnect();
     socket.connect();
   }
 }

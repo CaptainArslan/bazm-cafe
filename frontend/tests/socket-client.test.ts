@@ -6,6 +6,7 @@ vi.mock("socket.io-client", () => {
     io: vi.fn((opts: Record<string, unknown>) => {
       const instance = {
         opts,
+        auth: opts.auth,
         connected: false,
         connect: vi.fn(function (this: { connected: boolean }) {
           this.connected = true;
@@ -13,6 +14,7 @@ vi.mock("socket.io-client", () => {
         disconnect: vi.fn(function (this: { connected: boolean }) {
           this.connected = false;
         }),
+        on: vi.fn(),
       };
       instances.push(instance);
       return instance;
@@ -29,7 +31,7 @@ describe("socket client", () => {
   it("connects with no auth token by default", async () => {
     const { getSocket } = await import("../src/socket/client");
     const socket = getSocket() as unknown as { opts: { auth?: { token?: string } } };
-    expect(socket.opts.auth).toEqual({});
+    expect(socket.opts.auth).toBeUndefined();
   });
 
   it("setSocketAuthToken updates the auth payload used on the next connect", async () => {
@@ -50,10 +52,27 @@ describe("socket client", () => {
 
     const disconnectSpy = vi.spyOn(socket, "disconnect");
     const connectSpy = vi.spyOn(socket, "connect");
+    disconnectSpy.mockClear();
+    connectSpy.mockClear();
 
     setSocketAuthToken("new-token");
 
     expect(disconnectSpy).toHaveBeenCalled();
     expect(connectSpy).toHaveBeenCalled();
+  });
+
+  it("preserves previously attached listeners across an auth token change", async () => {
+    const { connectSocket, getSocket, setSocketAuthToken } = await import("../src/socket/client");
+    const socket = connectSocket() as unknown as {
+      on: (event: string, handler: () => void) => void;
+    };
+
+    const handler = vi.fn();
+    socket.on("some-event", handler);
+
+    setSocketAuthToken("new-token");
+
+    expect(getSocket()).toBe(socket);
+    expect((socket.on as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(1);
   });
 });
