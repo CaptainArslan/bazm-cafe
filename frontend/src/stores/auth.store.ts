@@ -13,7 +13,8 @@ export const useAuthStore = defineStore("auth", () => {
   const accessToken = ref<string | null>(null);
   const status = ref<"idle" | "restoring" | "ready">("idle");
 
-  const isAuthenticated = computed(() => user.value !== null && accessToken.value !== null);
+  // setSession()/clearSession() always set or clear user and accessToken together, so user alone is an equivalent signal; accessToken remains relevant only as the bearer-token source for authHttp, not as a second authentication signal.
+  const isAuthenticated = computed(() => user.value !== null);
   const role = computed<UserRole | null>(() => user.value?.role ?? null);
 
   function setSession(nextToken: string, nextUser: SafeUser): void {
