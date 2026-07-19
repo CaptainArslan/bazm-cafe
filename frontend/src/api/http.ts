@@ -61,12 +61,15 @@ export function configureAuthIntegration(config: AuthIntegration): void {
 
 function refreshOnce(): Promise<string | null> {
   if (!inFlightRefresh) {
-    inFlightRefresh = authIntegration
-      .refresh()
-      .catch(() => null)
-      .finally(() => {
-        inFlightRefresh = null;
-      });
+    inFlightRefresh = (async () => {
+      try {
+        return await authIntegration.refresh();
+      } catch {
+        return null;
+      }
+    })().finally(() => {
+      inFlightRefresh = null;
+    });
   }
   return inFlightRefresh;
 }
@@ -100,10 +103,8 @@ async function request<T>(path: string, options: AuthedRequestOptions = {}, useA
         if (newToken) {
           return request<T>(path, { ...options, _isRetryAfterRefresh: true }, true);
         }
-        authIntegration.onUnauthorized();
-      } else {
-        authIntegration.onUnauthorized();
       }
+      authIntegration.onUnauthorized();
     }
 
     const errorPayload = payload && payload.success === false ? payload.error : undefined;
