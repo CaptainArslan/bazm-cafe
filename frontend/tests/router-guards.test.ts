@@ -46,4 +46,28 @@ describe("router role guards", () => {
     await router.isReady();
     expect(router.currentRoute.value.name).toBe("staff.home");
   });
+
+  it("redirects an authenticated STAFF user away from staff.login to staff.home", async () => {
+    const authStore = useAuthStore();
+    // Test seam: see above.
+    authStore.user = { id: "1", name: "Ada", email: "ada@bazm.test", role: "STAFF" };
+    authStore.status = "ready";
+
+    const router = (await import("../src/router")).default;
+    await router.push("/staff/login");
+    await router.isReady();
+    expect(router.currentRoute.value.name).toBe("staff.home");
+  });
+
+  it("redirects an authenticated ADMIN user away from admin.login to admin.home", async () => {
+    const authStore = useAuthStore();
+    // Test seam: see above.
+    authStore.user = { id: "2", name: "Ali", email: "ali@bazm.test", role: "ADMIN" };
+    authStore.status = "ready";
+
+    const router = (await import("../src/router")).default;
+    await router.push("/admin/login");
+    await router.isReady();
+    expect(router.currentRoute.value.name).toBe("admin.home");
+  });
 });
