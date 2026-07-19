@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 
+import { useAuthStore } from "../stores/auth.store";
 import { useGuestSessionStore } from "../stores/guest-session.store";
 
 const router = createRouter({
@@ -85,9 +86,16 @@ const router = createRouter({
       component: () => import("../layouts/StaffLayout.vue"),
       children: [
         {
+          path: "login",
+          name: "staff.login",
+          component: () => import("../views/staff/LoginView.vue"),
+          meta: { publicOnlyRole: "STAFF" },
+        },
+        {
           path: "",
           name: "staff.home",
           component: () => import("../views/staff/HomePlaceholder.vue"),
+          meta: { role: "STAFF" },
         },
       ],
     },
@@ -96,25 +104,77 @@ const router = createRouter({
       component: () => import("../layouts/AdminLayout.vue"),
       children: [
         {
+          path: "login",
+          name: "admin.login",
+          component: () => import("../views/admin/LoginView.vue"),
+          meta: { publicOnlyRole: "ADMIN" },
+        },
+        {
           path: "",
           name: "admin.home",
           component: () => import("../views/admin/HomePlaceholder.vue"),
+          meta: { role: "ADMIN" },
         },
       ],
     },
   ],
 });
 
+function homeRouteNameFor(role: "STAFF" | "ADMIN"): string {
+  return role === "ADMIN" ? "admin.home" : "staff.home";
+}
+
+function loginRouteNameFor(role: "STAFF" | "ADMIN"): string {
+  return role === "ADMIN" ? "admin.login" : "staff.login";
+}
+
 router.beforeEach(async (to) => {
-  if (to.meta.requiresSession !== true) {
+  if (to.meta.requiresSession === true) {
+    const guestSessionStore = useGuestSessionStore();
+    await guestSessionStore.ensureFetched();
+
+    if (!guestSessionStore.isActive) {
+      return { name: "customer.welcome" };
+    }
+
     return true;
   }
 
-  const guestSessionStore = useGuestSessionStore();
-  await guestSessionStore.ensureFetched();
+  const requiredRole = to.meta.role as "STAFF" | "ADMIN" | undefined;
+  const publicOnlyRole = to.meta.publicOnlyRole as "STAFF" | "ADMIN" | undefined;
 
-  if (!guestSessionStore.isActive) {
-    return { name: "customer.welcome" };
+  if (!requiredRole && !publicOnlyRole) {
+    return true;
+  }
+
+  const authStore = useAuthStore();
+  // Only attempt a cookie-based restore when we don't already have a session in memory (e.g. right
+  // after login()): login() doesn't touch `status`, so guarding on status alone would re-trigger
+  // restore() on the very next navigation and risk clobbering a freshly-set session if it fails.
+  if (!authStore.isAuthenticated && authStore.status === "idle") {
+    await authStore.restore();
+  }
+
+  if (publicOnlyRole) {
+    if (authStore.isAuthenticated && authStore.role === publicOnlyRole) {
+      return { name: homeRouteNameFor(publicOnlyRole) };
+    }
+    return true;
+  }
+
+  if (!requiredRole) {
+    return true;
+  }
+
+  if (!authStore.isAuthenticated) {
+    return {
+      name: loginRouteNameFor(requiredRole),
+      query: to.fullPath !== "/" ? { redirect: to.fullPath } : undefined,
+    };
+  }
+
+  if (authStore.role !== requiredRole) {
+    return { name: homeRouteNameFor(authStore.role as "STAFF" | "ADMIN") };
   }
 
   return true;
