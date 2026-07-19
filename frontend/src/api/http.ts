@@ -67,7 +67,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return payload.data as T;
 }
 
-export const apiClient = {
+export const http = {
   get: <T>(path: string, options?: RequestOptions) =>
     request<T>(path, { ...options, method: "GET" }),
   post: <T>(path: string, body?: unknown, options?: RequestOptions) =>

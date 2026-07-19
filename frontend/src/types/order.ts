@@ -1,0 +1,49 @@
+import type { CustomerType, OrderPaymentStatus, OrderStatus } from "./enums";
+
+export type SafeOrderItem = {
+  productId: string | null;
+  productNameSnapshot: string;
+  unitPriceSnapshot: string;
+  preparationTimeMinutesSnapshot: number;
+  quantity: number;
+  lineTotal: string;
+  notes: string | null;
+};
+
+export type SafeOrder = {
+  id: string;
+  orderNumber: string;
+  billNumber: string;
+  orderType: CustomerType;
+  orderStatus: OrderStatus;
+  paymentStatus: OrderPaymentStatus;
+  tableId: string | null;
+  tableNumber: string | null;
+  customerId: string | null;
+  customerName: string | null;
+  customerPhone: string | null;
+  subtotal: string;
+  taxAmount: string;
+  serviceChargeAmount: string;
+  discountAmount: string;
+  totalAmount: string;
+  paidAmount: string;
+  remainingAmount: string;
+  estimatedPreparationMinutes: number;
+  estimatedReadyAt: string | null;
+  customerNotes: string | null;
+  rejectionReason: string | null;
+  cancellationReason: string | null;
+  receiptImagePath: string | null;
+  receiptImageUrl: string | null;
+  items: SafeOrderItem[];
+  acceptedAt: string | null;
+  preparingAt: string | null;
+  readyAt: string | null;
+  servedAt: string | null;
+  completedAt: string | null;
+  rejectedAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};

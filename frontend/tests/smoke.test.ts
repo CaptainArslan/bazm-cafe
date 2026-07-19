@@ -1,18 +1,15 @@
 import { mount } from "@vue/test-utils";
+import { createPinia, setActivePinia } from "pinia";
 import { describe, expect, it } from "vitest";
-import { createMemoryHistory, createRouter } from "vue-router";
 
 import App from "../src/App.vue";
-import HomePlaceholder from "../src/views/customer/HomePlaceholder.vue";
+import router from "../src/router";
 
 describe("App", () => {
-  it("mounts the customer placeholder at /", async () => {
-    const router = createRouter({
-      history: createMemoryHistory(),
-      routes: [{ path: "/", name: "customer.home", component: HomePlaceholder }],
-    });
+  it("mounts the customer welcome screen at /", async () => {
+    setActivePinia(createPinia());
 
-    router.push("/");
+    await router.push("/");
     await router.isReady();
 
     const wrapper = mount(App, {
@@ -21,6 +18,8 @@ describe("App", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("Customer app");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(wrapper.text()).toContain("Welcome");
   });
 });
