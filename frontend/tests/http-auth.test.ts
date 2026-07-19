@@ -118,4 +118,32 @@ describe("authHttp", () => {
     await expect(http.get("/guest/sessions/current")).rejects.toBeInstanceOf(ApiError);
     expect(refresh).not.toHaveBeenCalled();
   });
+
+  it("calls onUnauthorized and throws an ApiError (not the raw error) when refresh rejects", async () => {
+    const onUnauthorized = vi.fn();
+    const refresh = vi.fn().mockRejectedValue(new Error("refresh endpoint down"));
+    configureAuthIntegration({ getToken: () => "expired-token", refresh, onUnauthorized });
+
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(401, { success: false, message: "expired", error: { code: "UNAUTHORIZED" } }),
+    );
+
+    await expect(authHttp.get("/orders")).rejects.toBeInstanceOf(ApiError);
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onUnauthorized and throws an ApiError when the post-refresh retry is still 401", async () => {
+    const onUnauthorized = vi.fn();
+    const refresh = vi.fn().mockResolvedValue("fresh-token");
+    configureAuthIntegration({ getToken: () => "expired-token", refresh, onUnauthorized });
+
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, { success: false, message: "expired", error: { code: "UNAUTHORIZED" } }))
+      .mockResolvedValueOnce(jsonResponse(401, { success: false, message: "still expired", error: { code: "UNAUTHORIZED" } }));
+
+    await expect(authHttp.get("/orders")).rejects.toBeInstanceOf(ApiError);
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });

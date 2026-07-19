@@ -61,9 +61,12 @@ export function configureAuthIntegration(config: AuthIntegration): void {
 
 function refreshOnce(): Promise<string | null> {
   if (!inFlightRefresh) {
-    inFlightRefresh = authIntegration.refresh().finally(() => {
-      inFlightRefresh = null;
-    });
+    inFlightRefresh = authIntegration
+      .refresh()
+      .catch(() => null)
+      .finally(() => {
+        inFlightRefresh = null;
+      });
   }
   return inFlightRefresh;
 }
@@ -91,12 +94,16 @@ async function request<T>(path: string, options: AuthedRequestOptions = {}, useA
     | null;
 
   if (!response.ok || !payload || payload.success === false) {
-    if (useAuth && response.status === 401 && !_isRetryAfterRefresh) {
-      const newToken = await refreshOnce();
-      if (newToken) {
-        return request<T>(path, { ...options, _isRetryAfterRefresh: true }, true);
+    if (useAuth && response.status === 401) {
+      if (!_isRetryAfterRefresh) {
+        const newToken = await refreshOnce();
+        if (newToken) {
+          return request<T>(path, { ...options, _isRetryAfterRefresh: true }, true);
+        }
+        authIntegration.onUnauthorized();
+      } else {
+        authIntegration.onUnauthorized();
       }
-      authIntegration.onUnauthorized();
     }
 
     const errorPayload = payload && payload.success === false ? payload.error : undefined;
