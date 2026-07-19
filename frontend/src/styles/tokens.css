@@ -1,0 +1,44 @@
+/*
+  Design tokens copied verbatim from the approved design file:
+  claude.ai/design "BAZM Cafe - UI Screens.dc.html" (:root block).
+  Do not hand-tune values here — update from the design source instead.
+*/
+:root {
+  --bz-gold-100: oklch(96% 0.03 75);
+  --bz-gold-200: oklch(91% 0.05 75);
+  --bz-gold-300: oklch(85% 0.08 75);
+  --bz-gold-400: oklch(79% 0.11 75);
+  --bz-gold-500: oklch(74% 0.13 75);
+  --bz-gold-600: oklch(66% 0.13 75);
+  --bz-gold-700: oklch(58% 0.12 75);
+  --bz-gold-800: oklch(48% 0.10 75);
+  --bz-gold-900: oklch(38% 0.08 75);
+
+  --bz-ink-900: #151515;
+  --bz-ink-800: #242424;
+  --bz-ink-700: #3a3a3a;
+  --bz-ink-500: #6b6b6b;
+  --bz-ink-300: #a8a8a8;
+  --bz-ink-100: #e6e4e0;
+
+  --bz-bg: #fffdf8;
+  --bz-cream: #fff4d9;
+  --bz-cream-deep: #fce9be;
+
+  --bz-green: #3f7f4a;
+  --bz-green-tint: oklch(94% 0.04 145);
+  --bz-green-deep: oklch(38% 0.08 145);
+
+  --bz-amber: oklch(74% 0.14 70);
+  --bz-amber-tint: oklch(95% 0.05 70);
+
+  --bz-red: oklch(55% 0.19 25);
+  --bz-red-tint: oklch(95% 0.04 25);
+
+  --bz-font: "Poppins", sans-serif;
+
+  --bz-shadow-sm: 0 1px 2px rgba(21, 21, 21, 0.04), 0 3px 10px rgba(21, 21, 21, 0.055);
+  --bz-shadow-md: 0 2px 6px rgba(21, 21, 21, 0.05), 0 12px 28px rgba(21, 21, 21, 0.1);
+  --bz-shadow-lg: 0 8px 16px rgba(21, 21, 21, 0.1), 0 28px 56px rgba(21, 21, 21, 0.18);
+  --bz-border: rgba(21, 21, 21, 0.07);
+}

@@ -1,0 +1,513 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+enum CustomerType {
+  DINE_IN
+  TAKEAWAY
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  SERVED
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum OrderPaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  EASYPAISA
+  JAZZCASH
+  BANK_TRANSFER
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum StockMovementType {
+  STOCK_ADDED
+  STOCK_REMOVED
+  RESERVED
+  RESERVATION_RELEASED
+  CONSUMED
+  MANUAL_ADJUSTMENT
+}
+
+enum TableOperationalStatus {
+  AVAILABLE
+  OUT_OF_SERVICE
+}
+
+enum GuestSessionClosureType {
+  CLOSED
+  EXPIRED
+  FORCE_CLOSED
+}
+
+model User {
+  id                  BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid                String    @unique @default(uuid()) @db.Char(36)
+  name                String    @db.VarChar(100)
+  email               String    @unique @db.VarChar(191)
+  phone               String?   @db.VarChar(30)
+  passwordHash        String    @map("password_hash") @db.VarChar(255)
+  role                UserRole
+  isActive            Boolean   @default(true) @map("is_active")
+  emailVerifiedAt     DateTime? @map("email_verified_at") @db.DateTime(3)
+  passwordChangedAt   DateTime? @map("password_changed_at") @db.DateTime(3)
+  lastLoginAt         DateTime? @map("last_login_at") @db.DateTime(3)
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts") @db.UnsignedInt
+  lockedUntil         DateTime? @map("locked_until") @db.DateTime(3)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt           DateTime? @map("deleted_at") @db.DateTime(3)
+
+  passwordResetTokens PasswordResetToken[]
+  receivedPayments    Payment[]            @relation("PaymentReceivedBy")
+  voidedPayments      Payment[]            @relation("PaymentVoidedBy")
+  statusChanges       OrderStatusHistory[]
+  stockMovements      StockMovement[]
+  authSessions        AuthSession[]
+  createdCustomers    Customer[]
+  closedGuestSessions GuestSession[]       @relation("GuestSessionClosedBy")
+  recoveryCodes       GuestSessionRecoveryCode[]
+  auditLogs           AuditLog[]
+
+  @@index([role, isActive])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model RefreshToken {
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  authSessionId BigInt    @map("auth_session_id") @db.UnsignedBigInt
+  tokenHash     String    @unique @map("token_hash") @db.Char(64)
+  expiresAt     DateTime  @map("expires_at") @db.DateTime(3)
+  lastUsedAt    DateTime? @map("last_used_at") @db.DateTime(3)
+  revokedAt     DateTime? @map("revoked_at") @db.DateTime(3)
+  replacedById  BigInt?   @map("replaced_by_id") @db.UnsignedBigInt
+  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+
+  authSession AuthSession @relation(fields: [authSessionId], references: [id], onDelete: Cascade)
+
+  replacedBy RefreshToken?  @relation("RefreshTokenRotation", fields: [replacedById], references: [id], onDelete: SetNull)
+  replaces   RefreshToken[] @relation("RefreshTokenRotation")
+
+  @@index([authSessionId, revokedAt, expiresAt])
+  @@index([replacedById])
+  @@map("refresh_tokens")
+}
+
+model AuthSession {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid         String    @unique @default(uuid()) @db.Char(36)
+  userId       BigInt    @map("user_id") @db.UnsignedBigInt
+  deviceIdHash String    @map("device_id_hash") @db.Char(64)
+  deviceName   String?   @map("device_name") @db.VarChar(150)
+  ipAddress    String?   @map("ip_address") @db.VarChar(45)
+  userAgent    String?   @map("user_agent") @db.Text
+  lastUsedAt   DateTime? @map("last_used_at") @db.DateTime(3)
+  expiresAt    DateTime  @map("expires_at") @db.DateTime(3)
+  revokedAt    DateTime? @map("revoked_at") @db.DateTime(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+
+  @@unique([userId, deviceIdHash])
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+model PasswordResetToken {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  userId      BigInt    @map("user_id") @db.UnsignedBigInt
+  tokenHash   String    @unique @map("token_hash") @db.Char(64)
+  requestedIp String?   @map("requested_ip") @db.VarChar(45)
+  expiresAt   DateTime  @map("expires_at") @db.DateTime(3)
+  usedAt      DateTime? @map("used_at") @db.DateTime(3)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt, usedAt])
+  @@map("password_reset_tokens")
+}
+
+model Customer {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid            String    @unique @default(uuid()) @db.Char(36)
+  name            String    @db.VarChar(100)
+  phone           String?   @db.VarChar(30)
+  createdByUserId BigInt?   @map("created_by_user_id") @db.UnsignedBigInt
+  createdAt       DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt       DateTime? @map("deleted_at") @db.DateTime(3)
+
+  createdByUser User?          @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  guestSessions GuestSession[]
+  orders        Order[]
+
+  @@index([phone])
+  @@index([name])
+  @@index([createdByUserId])
+  @@index([deletedAt])
+  @@map("customers")
+}
+
+model GuestSession {
+  id                BigInt                    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid              String                    @unique @default(uuid()) @db.Char(36)
+  tokenHash         String                    @unique @map("token_hash") @db.Char(64)
+  orderType         CustomerType              @map("order_type")
+  restaurantTableId BigInt?                   @map("restaurant_table_id") @db.UnsignedBigInt
+  customerId        BigInt?                   @map("customer_id") @db.UnsignedBigInt
+  lastActivityAt    DateTime                  @map("last_activity_at") @db.DateTime(3)
+  expiresAt         DateTime                  @map("expires_at") @db.DateTime(3)
+  closedAt          DateTime?                 @map("closed_at") @db.DateTime(3)
+  closureType       GuestSessionClosureType?  @map("closure_type")
+  closedByUserId    BigInt?                   @map("closed_by_user_id") @db.UnsignedBigInt
+  closureReason     String?                   @map("closure_reason") @db.Text
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt         DateTime                  @updatedAt @map("updated_at") @db.DateTime(3)
+
+  restaurantTable     RestaurantTable?           @relation("TableGuestSessions", fields: [restaurantTableId], references: [id], onDelete: Restrict)
+  occupiedTable       RestaurantTable?           @relation("TableActiveGuestSession")
+  customer            Customer?                  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  closedByUser        User?                      @relation("GuestSessionClosedBy", fields: [closedByUserId], references: [id], onDelete: SetNull)
+  orders              Order[]
+  recoveryCodes       GuestSessionRecoveryCode[]
+  receiptAccessTokens ReceiptAccessToken[]
+
+  @@index([restaurantTableId, closedAt])
+  @@index([customerId])
+  @@index([expiresAt, closedAt])
+  @@index([lastActivityAt, closedAt])
+  @@map("guest_sessions")
+}
+
+model RestaurantTable {
+  id                   BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid                 String                 @unique @default(uuid()) @db.Char(36)
+  tableNumber          String                 @unique @map("table_number") @db.VarChar(30)
+  name                 String?                @db.VarChar(100)
+  capacity             Int                    @default(1) @db.UnsignedInt
+  operationalStatus    TableOperationalStatus @default(AVAILABLE) @map("operational_status")
+  qrTokenHash          String                 @unique @map("qr_token_hash") @db.Char(64)
+  qrVersion            Int                    @default(1) @map("qr_version") @db.UnsignedInt
+  qrImagePath          String?                @map("qr_image_path") @db.VarChar(500)
+  qrGeneratedAt        DateTime               @default(now()) @map("qr_generated_at") @db.DateTime(3)
+  qrRegeneratedAt      DateTime?              @map("qr_regenerated_at") @db.DateTime(3)
+  activeGuestSessionId BigInt?                @unique @map("active_guest_session_id") @db.UnsignedBigInt
+  isActive             Boolean                @default(true) @map("is_active")
+  createdAt            DateTime               @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt            DateTime               @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt            DateTime?              @map("deleted_at") @db.DateTime(3)
+
+  orders             Order[]
+  guestSessions      GuestSession[] @relation("TableGuestSessions")
+  activeGuestSession GuestSession?  @relation("TableActiveGuestSession", fields: [activeGuestSessionId], references: [id], onDelete: SetNull)
+
+  @@index([isActive, deletedAt])
+  @@index([operationalStatus, deletedAt])
+  @@map("restaurant_tables")
+}
+
+model Category {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid         String    @unique @default(uuid()) @db.Char(36)
+  name         String    @db.VarChar(100)
+  slug         String    @unique @db.VarChar(120)
+  description  String?   @db.Text
+  imagePath    String?   @map("image_path") @db.VarChar(500)
+  displayOrder Int       @default(0) @map("display_order") @db.UnsignedInt
+  isVisible    Boolean   @default(true) @map("is_visible")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt    DateTime? @map("deleted_at") @db.DateTime(3)
+
+  products Product[]
+
+  @@index([isVisible, displayOrder])
+  @@index([deletedAt])
+  @@map("categories")
+}
+
+model Product {
+  id                 BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid               String    @unique @default(uuid()) @db.Char(36)
+  categoryId         BigInt    @map("category_id") @db.UnsignedBigInt
+  name               String    @db.VarChar(150)
+  slug               String    @unique @db.VarChar(170)
+  description        String?   @db.Text
+  imagePath          String?   @map("image_path") @db.VarChar(500)
+  price              Decimal   @db.Decimal(12, 2)
+  preparationMinutes Int       @default(0) @map("preparation_minutes") @db.UnsignedInt
+  stockQuantity      Int       @default(0) @map("stock_quantity") @db.UnsignedInt
+  reservedQuantity   Int       @default(0) @map("reserved_quantity") @db.UnsignedInt
+  lowStockThreshold  Int       @default(0) @map("low_stock_threshold") @db.UnsignedInt
+  trackStock         Boolean   @default(true) @map("track_stock")
+  isAvailable        Boolean   @default(true) @map("is_available")
+  displayOrder       Int       @default(0) @map("display_order") @db.UnsignedInt
+  createdAt          DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt          DateTime? @map("deleted_at") @db.DateTime(3)
+
+  category       Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  orderItems     OrderItem[]
+  stockMovements StockMovement[]
+
+  @@index([categoryId, isAvailable, displayOrder])
+  @@index([isAvailable, trackStock])
+  @@index([deletedAt])
+  @@map("products")
+}
+
+model Order {
+  id                  BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid                String             @unique @default(uuid()) @db.Char(36)
+  orderNumber         String             @unique @map("order_number") @db.VarChar(30)
+  billNumber          String             @unique @map("bill_number") @db.VarChar(30)
+  guestSessionId      BigInt             @map("guest_session_id") @db.UnsignedBigInt
+  restaurantTableId   BigInt?            @map("restaurant_table_id") @db.UnsignedBigInt
+  customerId          BigInt?            @map("customer_id") @db.UnsignedBigInt
+  customerType        CustomerType       @map("customer_type")
+  customerName        String?            @map("customer_name") @db.VarChar(100)
+  customerPhone       String?            @map("customer_phone") @db.VarChar(30)
+  status              OrderStatus        @default(PENDING)
+  paymentStatus       OrderPaymentStatus @default(UNPAID) @map("payment_status")
+  subtotal            Decimal            @db.Decimal(12, 2)
+  taxAmount           Decimal            @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  serviceChargeAmount Decimal            @default(0) @map("service_charge_amount") @db.Decimal(12, 2)
+  discountAmount      Decimal            @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  totalAmount         Decimal            @map("total_amount") @db.Decimal(12, 2)
+  customerNotes       String?            @map("customer_notes") @db.Text
+  rejectionReason     String?            @map("rejection_reason") @db.Text
+  cancellationReason  String?            @map("cancellation_reason") @db.Text
+  receiptImagePath    String?            @map("receipt_image_path") @db.VarChar(500)
+  estimatedReadyAt    DateTime?          @map("estimated_ready_at") @db.DateTime(3)
+  acceptedAt          DateTime?          @map("accepted_at") @db.DateTime(3)
+  preparingAt         DateTime?          @map("preparing_at") @db.DateTime(3)
+  readyAt             DateTime?          @map("ready_at") @db.DateTime(3)
+  servedAt            DateTime?          @map("served_at") @db.DateTime(3)
+  completedAt         DateTime?          @map("completed_at") @db.DateTime(3)
+  rejectedAt          DateTime?          @map("rejected_at") @db.DateTime(3)
+  cancelledAt         DateTime?          @map("cancelled_at") @db.DateTime(3)
+  createdAt           DateTime           @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt           DateTime?          @map("deleted_at") @db.DateTime(3)
+
+  guestSession    GuestSession         @relation(fields: [guestSessionId], references: [id], onDelete: Restrict)
+  restaurantTable RestaurantTable?     @relation(fields: [restaurantTableId], references: [id], onDelete: Restrict)
+  customer        Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items           OrderItem[]
+  payments        Payment[]
+  statusHistories OrderStatusHistory[]
+  stockMovements  StockMovement[]
+
+  @@index([guestSessionId])
+  @@index([customerId])
+  @@index([status, createdAt])
+  @@index([paymentStatus, createdAt])
+  @@index([restaurantTableId, status])
+  @@index([deletedAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id               BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  orderId          BigInt   @map("order_id") @db.UnsignedBigInt
+  productId        BigInt?  @map("product_id") @db.UnsignedBigInt
+  productName      String   @map("product_name") @db.VarChar(150)
+  productPrice     Decimal  @map("product_price") @db.Decimal(12, 2)
+  quantity         Int      @db.UnsignedInt
+  lineSubtotal     Decimal  @map("line_subtotal") @db.Decimal(12, 2)
+  customerNotes    String?  @map("customer_notes") @db.Text
+  estimatedMinutes Int      @default(0) @map("estimated_minutes") @db.UnsignedInt
+  createdAt        DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  product        Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  stockMovements StockMovement[]
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Payment {
+  id               BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid             String        @unique @default(uuid()) @db.Char(36)
+  paymentNumber    String        @unique @map("payment_number") @db.VarChar(30)
+  orderId          BigInt        @map("order_id") @db.UnsignedBigInt
+  receivedByUserId BigInt?       @map("received_by_user_id") @db.UnsignedBigInt
+  amount           Decimal       @db.Decimal(12, 2)
+  method           PaymentMethod
+  status           PaymentStatus @default(PENDING)
+  reference        String?       @db.VarChar(191)
+  notes            String?       @db.Text
+  idempotencyKey   String?       @unique @map("idempotency_key") @db.VarChar(100)
+  paidAt           DateTime?     @map("paid_at") @db.DateTime(3)
+  refundedAt       DateTime?     @map("refunded_at") @db.DateTime(3)
+  voidedAt         DateTime?     @map("voided_at") @db.DateTime(3)
+  voidReason       String?       @map("void_reason") @db.Text
+  voidedByUserId   BigInt?       @map("voided_by_user_id") @db.UnsignedBigInt
+  createdAt        DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.DateTime(3)
+
+  order          Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  receivedByUser User? @relation("PaymentReceivedBy", fields: [receivedByUserId], references: [id], onDelete: SetNull)
+  voidedByUser   User? @relation("PaymentVoidedBy", fields: [voidedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, status])
+  @@index([receivedByUserId])
+  @@index([status, paidAt])
+  @@map("payments")
+}
+
+model OrderStatusHistory {
+  id              BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  orderId         BigInt       @map("order_id") @db.UnsignedBigInt
+  changedByUserId BigInt?      @map("changed_by_user_id") @db.UnsignedBigInt
+  fromStatus      OrderStatus? @map("from_status")
+  toStatus        OrderStatus  @map("to_status")
+  reason          String?      @db.Text
+  metadata        Json?
+  createdAt       DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
+
+  order         Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  changedByUser User? @relation(fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, createdAt])
+  @@index([changedByUserId])
+  @@map("order_status_histories")
+}
+
+model StockMovement {
+  id              BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  productId       BigInt            @map("product_id") @db.UnsignedBigInt
+  orderId         BigInt?           @map("order_id") @db.UnsignedBigInt
+  orderItemId     BigInt?           @map("order_item_id") @db.UnsignedBigInt
+  createdByUserId BigInt?           @map("created_by_user_id") @db.UnsignedBigInt
+  type            StockMovementType
+  quantity        Int
+  stockBefore     Int               @map("stock_before") @db.UnsignedInt
+  stockAfter      Int               @map("stock_after") @db.UnsignedInt
+  reservedBefore  Int               @map("reserved_before") @db.UnsignedInt
+  reservedAfter   Int               @map("reserved_after") @db.UnsignedInt
+  notes           String?           @db.Text
+  createdAt       DateTime          @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
+
+  product       Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  order         Order?     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  orderItem     OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  createdByUser User?      @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([productId, createdAt])
+  @@index([orderId])
+  @@index([orderItemId])
+  @@index([createdByUserId])
+  @@map("stock_movements")
+}
+
+model CafeSettings {
+  id                   Int      @id @default(1)
+  taxRatePercent       Decimal  @default(0) @map("tax_rate_percent") @db.Decimal(5, 2)
+  serviceChargePercent Decimal  @default(0) @map("service_charge_percent") @db.Decimal(5, 2)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  createdAt            DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  @@map("cafe_settings")
+}
+
+model GuestSessionRecoveryCode {
+  id                BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid              String    @unique @default(uuid()) @db.Char(36)
+  guestSessionId    BigInt    @map("guest_session_id") @db.UnsignedBigInt
+  codeHash          String    @unique @map("code_hash") @db.Char(64)
+  generatedByUserId BigInt    @map("generated_by_user_id") @db.UnsignedBigInt
+  expiresAt         DateTime  @map("expires_at") @db.DateTime(3)
+  usedAt            DateTime? @map("used_at") @db.DateTime(3)
+  revokedAt         DateTime? @map("revoked_at") @db.DateTime(3)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+
+  guestSession    GuestSession @relation(fields: [guestSessionId], references: [id], onDelete: Restrict)
+  generatedByUser User         @relation(fields: [generatedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([guestSessionId, revokedAt, usedAt], map: "gs_recovery_session_idx")
+  @@index([expiresAt], map: "gs_recovery_expires_idx")
+  @@map("guest_session_recovery_codes")
+}
+
+model ReceiptAccessToken {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid           String    @unique @default(uuid()) @db.Char(36)
+  tokenHash      String    @unique @map("token_hash") @db.Char(64)
+  guestSessionId BigInt    @map("guest_session_id") @db.UnsignedBigInt
+  expiresAt      DateTime  @map("expires_at") @db.DateTime(3)
+  revokedAt      DateTime? @map("revoked_at") @db.DateTime(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+
+  guestSession GuestSession @relation(fields: [guestSessionId], references: [id], onDelete: Restrict)
+
+  @@index([guestSessionId, expiresAt], map: "receipt_access_session_idx")
+  @@map("receipt_access_tokens")
+}
+
+model AuditLog {
+  id                  BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid                String    @unique @default(uuid()) @db.Char(36)
+  action              String    @db.VarChar(80)
+  actorUserId         BigInt?   @map("actor_user_id") @db.UnsignedBigInt
+  actorGuestSessionId BigInt?   @map("actor_guest_session_id") @db.UnsignedBigInt
+  entityType          String    @map("entity_type") @db.VarChar(80)
+  entityId            String    @map("entity_id") @db.VarChar(80)
+  previousValues      Json?     @map("previous_values")
+  newValues           Json?     @map("new_values")
+  reason              String?   @db.Text
+  metadata            Json?
+  createdAt           DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+
+  actorUser User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId, createdAt], map: "audit_logs_entity_idx")
+  @@index([actorUserId, createdAt], map: "audit_logs_actor_idx")
+  @@index([action, createdAt], map: "audit_logs_action_idx")
+  @@map("audit_logs")
+}

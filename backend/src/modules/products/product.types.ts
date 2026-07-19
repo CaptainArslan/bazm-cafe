@@ -1,0 +1,20 @@
+export type SafeProduct = {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  imagePath: string | null;
+  price: string;
+  preparationMinutes: number;
+  stockQuantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  lowStockThreshold: number;
+  trackStock: boolean;
+  isAvailable: boolean;
+  displayOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+};

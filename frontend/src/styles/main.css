@@ -1,0 +1,125 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./tokens.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  shadcn-vue semantic tokens, mapped onto the BAZM design tokens above.
+  No dark theme exists in the approved design yet — `.dark` overrides
+  are deferred until that's designed rather than invented here.
+*/
+:root {
+  --background: var(--bz-bg);
+  --foreground: var(--bz-ink-900);
+
+  --card: #ffffff;
+  --card-foreground: var(--bz-ink-900);
+
+  --popover: #ffffff;
+  --popover-foreground: var(--bz-ink-900);
+
+  --primary: var(--bz-gold-600);
+  --primary-foreground: var(--bz-ink-900);
+
+  --secondary: var(--bz-cream);
+  --secondary-foreground: var(--bz-ink-900);
+
+  --muted: var(--bz-ink-100);
+  --muted-foreground: var(--bz-ink-500);
+
+  --accent: var(--bz-gold-200);
+  --accent-foreground: var(--bz-ink-900);
+
+  --destructive: var(--bz-red);
+  --destructive-foreground: #ffffff;
+
+  --success: var(--bz-green);
+  --success-foreground: #ffffff;
+
+  --warning: var(--bz-amber);
+  --warning-foreground: var(--bz-ink-900);
+
+  --border: var(--bz-border);
+  --input: var(--bz-border);
+  --ring: var(--bz-gold-500);
+
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-bz-gold-100: var(--bz-gold-100);
+  --color-bz-gold-200: var(--bz-gold-200);
+  --color-bz-gold-300: var(--bz-gold-300);
+  --color-bz-gold-400: var(--bz-gold-400);
+  --color-bz-gold-500: var(--bz-gold-500);
+  --color-bz-gold-600: var(--bz-gold-600);
+  --color-bz-gold-700: var(--bz-gold-700);
+  --color-bz-gold-800: var(--bz-gold-800);
+  --color-bz-gold-900: var(--bz-gold-900);
+
+  --color-bz-ink-900: var(--bz-ink-900);
+  --color-bz-ink-800: var(--bz-ink-800);
+  --color-bz-ink-700: var(--bz-ink-700);
+  --color-bz-ink-500: var(--bz-ink-500);
+  --color-bz-ink-300: var(--bz-ink-300);
+  --color-bz-ink-100: var(--bz-ink-100);
+
+  --color-bz-bg: var(--bz-bg);
+  --color-bz-cream: var(--bz-cream);
+  --color-bz-cream-deep: var(--bz-cream-deep);
+
+  --color-bz-green: var(--bz-green);
+  --color-bz-green-tint: var(--bz-green-tint);
+  --color-bz-green-deep: var(--bz-green-deep);
+
+  --color-bz-amber: var(--bz-amber);
+  --color-bz-amber-tint: var(--bz-amber-tint);
+
+  --color-bz-red: var(--bz-red);
+  --color-bz-red-tint: var(--bz-red-tint);
+
+  --font-sans: var(--bz-font);
+
+  --shadow-bz-sm: var(--bz-shadow-sm);
+  --shadow-bz-md: var(--bz-shadow-md);
+  --shadow-bz-lg: var(--bz-shadow-lg);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
