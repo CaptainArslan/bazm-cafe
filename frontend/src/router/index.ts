@@ -2,6 +2,15 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import { useAuthStore } from "../stores/auth.store";
 import { useGuestSessionStore } from "../stores/guest-session.store";
+import type { UserRole } from "../types/auth";
+
+declare module "vue-router" {
+  interface RouteMeta {
+    role?: UserRole;
+    publicOnlyRole?: UserRole;
+    requiresSession?: boolean;
+  }
+}
 
 const router = createRouter({
   history: createWebHistory(),
@@ -120,11 +129,11 @@ const router = createRouter({
   ],
 });
 
-function homeRouteNameFor(role: "STAFF" | "ADMIN"): string {
+function homeRouteNameFor(role: UserRole): string {
   return role === "ADMIN" ? "admin.home" : "staff.home";
 }
 
-function loginRouteNameFor(role: "STAFF" | "ADMIN"): string {
+function loginRouteNameFor(role: UserRole): string {
   return role === "ADMIN" ? "admin.login" : "staff.login";
 }
 
@@ -140,8 +149,8 @@ router.beforeEach(async (to) => {
     return true;
   }
 
-  const requiredRole = to.meta.role as "STAFF" | "ADMIN" | undefined;
-  const publicOnlyRole = to.meta.publicOnlyRole as "STAFF" | "ADMIN" | undefined;
+  const requiredRole = to.meta.role;
+  const publicOnlyRole = to.meta.publicOnlyRole;
 
   if (!requiredRole && !publicOnlyRole) {
     return true;
@@ -174,7 +183,7 @@ router.beforeEach(async (to) => {
   }
 
   if (authStore.role !== requiredRole) {
-    return { name: homeRouteNameFor(authStore.role as "STAFF" | "ADMIN") };
+    return { name: homeRouteNameFor(authStore.role as UserRole) };
   }
 
   return true;

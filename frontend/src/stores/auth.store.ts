@@ -5,7 +5,7 @@ import { computed, ref } from "vue";
 import { fetchCurrentUser, login as loginRequest, logout as logoutRequest, logoutAll as logoutAllRequest, refreshSession } from "../api/auth";
 import { configureAuthIntegration } from "../api/http";
 import { emitSessionExpired } from "../lib/session-expired-bus";
-import { disconnectSocket } from "../socket/client";
+import { disconnectSocket, setSocketAuthToken } from "../socket/client";
 import type { SafeUser, UserRole } from "../types/auth";
 
 export const useAuthStore = defineStore("auth", () => {
@@ -20,11 +20,13 @@ export const useAuthStore = defineStore("auth", () => {
   function setSession(nextToken: string, nextUser: SafeUser): void {
     accessToken.value = nextToken;
     user.value = nextUser;
+    setSocketAuthToken(nextToken);
   }
 
   function clearSession(): void {
     accessToken.value = null;
     user.value = null;
+    setSocketAuthToken(null);
   }
 
   async function login(email: string, password: string, deviceName?: string): Promise<SafeUser> {

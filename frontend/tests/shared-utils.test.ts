@@ -15,6 +15,12 @@ describe("formatCurrency", () => {
   it("formats zero", () => {
     expect(formatCurrency(0)).toBe("Rs. 0.00");
   });
+  it("pins the digit-grouping behavior for large values (documents current en-PK ICU output for Admin/Staff totals)", () => {
+    // This locks in the actual output observed from this environment's ICU data. If Node/ICU
+    // versions change and this starts using South-Asian (lakh/crore) grouping instead of Western
+    // grouping, this test will fail and flag the change for review before it reaches a real screen.
+    expect(formatCurrency(250000)).toBe("Rs. 250,000.00");
+  });
 });
 
 describe("formatDateTime / formatDate", () => {

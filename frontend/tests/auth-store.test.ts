@@ -67,6 +67,22 @@ describe("auth store", () => {
     expect(disconnectSpy).toHaveBeenCalled();
   });
 
+  it("authenticates the socket on login and clears its auth token on logout", async () => {
+    vi.spyOn(authApi, "login").mockResolvedValue({ accessToken: "tok-1", user: STAFF_USER });
+    vi.spyOn(authApi, "logout").mockResolvedValue(undefined);
+    const setSocketAuthTokenSpy = vi.spyOn(socketClient, "setSocketAuthToken").mockImplementation(() => {});
+    vi.spyOn(socketClient, "disconnectSocket").mockImplementation(() => {});
+    const store = useAuthStore();
+
+    await store.login("ada@bazm.test", "secret");
+
+    expect(setSocketAuthTokenSpy).toHaveBeenCalledWith("tok-1");
+
+    await store.logout();
+
+    expect(setSocketAuthTokenSpy).toHaveBeenCalledWith(null);
+  });
+
   it("wires authHttp so a 401 triggers refresh via the auth store", async () => {
     useAuthStore(); // instantiating the store registers its integration with http.ts
     vi.spyOn(authApi, "refreshSession").mockResolvedValue({ accessToken: "tok-3", user: STAFF_USER });
