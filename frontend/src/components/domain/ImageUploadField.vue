@@ -61,6 +61,7 @@ async function onRemove(): Promise<void> {
   if (!currentPath) {
     return;
   }
+  error.value = null;
   try {
     await deleteMedia(currentPath);
   } catch {
@@ -72,7 +73,7 @@ async function onRemove(): Promise<void> {
 
 <template>
   <div class="rounded-2xl border border-bz-border bg-white p-4">
-    <label v-if="label" class="text-sm font-semibold text-bz-ink-900">{{ label }}</label>
+    <label v-if="label" for="image-upload-field" class="text-sm font-semibold text-bz-ink-900">{{ label }}</label>
 
     <div v-if="previewUrl" class="mt-2 flex items-center gap-3">
       <img :src="previewUrl" alt="" class="h-16 w-16 rounded-xl object-cover" />
@@ -80,6 +81,7 @@ async function onRemove(): Promise<void> {
         type="button"
         data-test="remove"
         class="rounded-full border border-bz-border px-3 py-1.5 text-sm font-medium text-bz-ink-700"
+        :disabled="uploading"
         @click="onRemove"
       >
         Remove
@@ -87,6 +89,7 @@ async function onRemove(): Promise<void> {
     </div>
 
     <input
+      id="image-upload-field"
       type="file"
       data-test="file-input"
       accept="image/jpeg,image/png,image/webp,image/gif"

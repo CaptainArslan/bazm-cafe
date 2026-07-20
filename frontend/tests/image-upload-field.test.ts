@@ -106,6 +106,50 @@ describe("ImageUploadField", () => {
     expect(wrapper.emitted("update:modelValue")).toEqual([[null]]);
   });
 
+  it("still emits the new path when the best-effort delete of the old image fails during replace", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse(201, {
+          success: true,
+          message: "ok",
+          data: { media: { path: "/uploads/media/products/new.png", url: "/uploads/media/products/new.png" } },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(500, { success: false, message: "Something went wrong.", error: { code: "INTERNAL_ERROR" } }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const wrapper = mount(ImageUploadField, {
+      props: { modelValue: "/uploads/media/products/old.png", folder: "products" },
+    });
+    const file = new File(["content"], "photo.png", { type: "image/png" });
+    await selectFile(wrapper, file);
+    await flushPromises();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(wrapper.emitted("update:modelValue")).toEqual([["/uploads/media/products/new.png"]]);
+    expect(wrapper.find(".text-bz-red").exists()).toBe(false);
+  });
+
+  it("still emits null when the best-effort delete fails on Remove", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      jsonResponse(500, { success: false, message: "Something went wrong.", error: { code: "INTERNAL_ERROR" } }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const wrapper = mount(ImageUploadField, {
+      props: { modelValue: "/uploads/media/products/old.png", folder: "products" },
+    });
+    await wrapper.find('[data-test="remove"]').trigger("click");
+    await flushPromises();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(wrapper.emitted("update:modelValue")).toEqual([[null]]);
+    expect(wrapper.find(".text-bz-red").exists()).toBe(false);
+  });
+
   it("shows an inline error and leaves modelValue untouched when the upload fails", async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(
       jsonResponse(400, { success: false, message: "Image must be 5MB or smaller.", error: { code: "MEDIA_TOO_LARGE" } }),
