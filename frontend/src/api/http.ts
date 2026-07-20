@@ -83,16 +83,18 @@ async function request<T>(path: string, options: AuthedRequestOptions = {}, useA
 
   const token = useAuth ? authIntegration.getToken() : null;
 
+  const isFormData = body instanceof FormData;
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
     credentials: "include",
     headers: {
       Accept: "application/json",
-      ...(body !== undefined && { "Content-Type": "application/json" }),
+      ...(body !== undefined && !isFormData && { "Content-Type": "application/json" }),
       ...(token && { Authorization: `Bearer ${token}` }),
       ...headers,
     },
-    ...(body !== undefined && { body: JSON.stringify(body) }),
+    ...(body !== undefined && { body: isFormData ? body : JSON.stringify(body) }),
   });
 
   const payload = (await response.json().catch(() => null)) as

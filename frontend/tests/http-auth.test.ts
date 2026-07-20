@@ -162,4 +162,29 @@ describe("authHttp", () => {
     expect(onUnauthorized).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it("sends a FormData body without JSON-stringifying it or setting Content-Type", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(201, { success: true, message: "ok", data: { media: { path: "/uploads/media/products/x.png" } } }),
+    );
+
+    const formData = new FormData();
+    formData.append("file", new File(["x"], "x.png", { type: "image/png" }));
+
+    await authHttp.post("/media?folder=products", formData);
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.body).toBe(formData);
+    expect(init.headers["Content-Type"]).toBeUndefined();
+  });
+
+  it("still JSON-stringifies and sets Content-Type for a plain object body", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { success: true, message: "ok", data: { ok: true } }));
+
+    await authHttp.post("/staff", { name: "Ada" });
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.body).toBe(JSON.stringify({ name: "Ada" }));
+    expect(init.headers["Content-Type"]).toBe("application/json");
+  });
 });
