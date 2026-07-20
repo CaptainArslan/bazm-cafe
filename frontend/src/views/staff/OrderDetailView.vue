@@ -122,7 +122,10 @@ async function onViewReceipt(): Promise<void> {
     }
     const html = await response.text();
     const blobUrl = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-    window.open(blobUrl, "_blank", "noopener");
+    const receiptWindow = window.open(blobUrl, "_blank", "noopener");
+    if (!receiptWindow) {
+      actionError.value = "Please allow pop-ups to view the receipt.";
+    }
   } catch (caught) {
     actionError.value = caught instanceof Error ? caught.message : "Could not load the receipt.";
   } finally {

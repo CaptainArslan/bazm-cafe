@@ -1,12 +1,16 @@
 import { mount, flushPromises } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { configureAuthIntegration } from "../src/api/http";
 import * as staffOrdersApi from "../src/api/staff-orders";
 import * as staffGuestSessionsApi from "../src/api/staff-guest-sessions";
 import OrderDetailView from "../src/views/staff/OrderDetailView.vue";
 import { OrderStatus, OrderPaymentStatus } from "../src/types/enums";
 import router from "../src/router";
+
+// Note: jsdom already implements URL.createObjectURL, so no stub is needed here for
+// the receipt-viewing tests below.
 
 function makeOrder(overrides: Record<string, unknown> = {}) {
   return {
@@ -53,6 +57,11 @@ function makeOrder(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   setActivePinia(createPinia());
   vi.restoreAllMocks();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  configureAuthIntegration({ getToken: () => null, refresh: () => Promise.resolve(null), onUnauthorized: () => {} });
 });
 
 describe("OrderDetailView", () => {
@@ -125,5 +134,55 @@ describe("OrderDetailView", () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain("ABC123");
+  });
+
+  it("fetches the receipt with a bearer token and opens it in a new window", async () => {
+    vi.spyOn(staffOrdersApi, "getStaffOrder").mockResolvedValue({ order: makeOrder() as never });
+    configureAuthIntegration({
+      getToken: () => "test-token",
+      refresh: () => Promise.resolve(null),
+      onUnauthorized: () => {},
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve("<html>Receipt</html>") }),
+    );
+    const openSpy = vi.spyOn(window, "open").mockReturnValue({} as Window);
+    await router.isReady();
+
+    const wrapper = mount(OrderDetailView, { props: { orderId: "o1" }, global: { plugins: [router] } });
+    await flushPromises();
+
+    await wrapper.find("[data-test='view-receipt']").trigger("click");
+    await flushPromises();
+
+    const [url, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(url).toContain("/orders/o1/receipt");
+    expect(init.headers.Authorization).toBe("Bearer test-token");
+    expect(openSpy).toHaveBeenCalledWith(expect.stringMatching(/^blob:/), "_blank", "noopener");
+    expect(wrapper.text()).not.toContain("Please allow pop-ups");
+  });
+
+  it("surfaces an error when the browser blocks the receipt pop-up", async () => {
+    vi.spyOn(staffOrdersApi, "getStaffOrder").mockResolvedValue({ order: makeOrder() as never });
+    configureAuthIntegration({
+      getToken: () => "test-token",
+      refresh: () => Promise.resolve(null),
+      onUnauthorized: () => {},
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve("<html>Receipt</html>") }),
+    );
+    vi.spyOn(window, "open").mockReturnValue(null);
+    await router.isReady();
+
+    const wrapper = mount(OrderDetailView, { props: { orderId: "o1" }, global: { plugins: [router] } });
+    await flushPromises();
+
+    await wrapper.find("[data-test='view-receipt']").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Please allow pop-ups to view the receipt.");
   });
 });
