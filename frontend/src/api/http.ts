@@ -59,6 +59,10 @@ export function configureAuthIntegration(config: AuthIntegration): void {
   authIntegration = config;
 }
 
+export function getAccessToken(): string | null {
+  return authIntegration.getToken();
+}
+
 function refreshOnce(): Promise<string | null> {
   if (!inFlightRefresh) {
     inFlightRefresh = (async () => {

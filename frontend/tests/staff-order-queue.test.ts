@@ -58,6 +58,10 @@ describe("OrderQueueView", () => {
     vi.spyOn(staffOrdersApi, "listStaffOrders").mockResolvedValue({
       orders: [makeOrder("o1", OrderStatus.PENDING) as never],
     });
+    // router.isReady() only resolves once an initial navigation has completed; without a preceding
+    // push it never settles (mount()'s app.use(router) would trigger one, but that happens after
+    // this await, so isReady() must be given a navigation to wait on first — see login-flow.test.ts).
+    await router.push("/");
     await router.isReady();
 
     const wrapper = mount(OrderQueueView, { global: { plugins: [router] } });
