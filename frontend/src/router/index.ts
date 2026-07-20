@@ -103,7 +103,14 @@ const router = createRouter({
         {
           path: "",
           name: "staff.home",
-          component: () => import("../views/staff/HomePlaceholder.vue"),
+          component: () => import("../views/staff/OrderQueueView.vue"),
+          meta: { role: "STAFF" },
+        },
+        {
+          path: "orders/:orderId",
+          name: "staff.order-detail",
+          component: () => import("../views/staff/OrderDetailView.vue"),
+          props: true,
           meta: { role: "STAFF" },
         },
       ],
