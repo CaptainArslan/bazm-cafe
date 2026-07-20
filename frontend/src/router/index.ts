@@ -113,6 +113,12 @@ const router = createRouter({
           props: true,
           meta: { role: "STAFF" },
         },
+        {
+          path: "settings",
+          name: "staff.settings",
+          component: () => import("../views/staff/SettingsView.vue"),
+          meta: { role: "STAFF" },
+        },
       ],
     },
     {
