@@ -1,6 +1,6 @@
 <!-- frontend/src/views/staff/OrderDetailView.vue -->
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import CustomerAttachPanel from "../../components/domain/CustomerAttachPanel.vue";
@@ -29,6 +29,13 @@ const rejecting = ref(false);
 const recoveryCode = ref<{ code: string; expiresAt: string } | null>(null);
 const generatingCode = ref(false);
 const viewingReceipt = ref(false);
+// Set once the initial load succeeds. Used to distinguish "order missing because a
+// filtered socket-triggered refetch dropped it from the store's list" (recoverable via a
+// single-order re-fetch) from "order missing because the very first load never found it".
+const loaded = ref(false);
+// True while we're re-fetching this single order after it disappeared from the store's
+// (filter-scoped) list. Guards against overlapping re-fetches.
+const recovering = ref(false);
 
 const order = computed(() => staffOrdersStore.findOrder(props.orderId));
 
@@ -36,7 +43,10 @@ const canMarkServed = computed(() => {
   if (!order.value) {
     return false;
   }
-  return order.value.orderType !== CustomerType.DINE_IN || order.value.customerId !== null;
+  const hasCustomer =
+    order.value.customerId !== null ||
+    (order.value.customerName !== null && order.value.customerName.length > 0);
+  return order.value.orderType !== CustomerType.DINE_IN || hasCustomer;
 });
 
 async function load(): Promise<void> {
@@ -44,6 +54,7 @@ async function load(): Promise<void> {
   loadError.value = null;
   try {
     await staffOrdersStore.fetchOrder(props.orderId);
+    loaded.value = true;
   } catch (caught) {
     loadError.value = toUserSafeErrorMessage(caught);
   } finally {
@@ -52,6 +63,26 @@ async function load(): Promise<void> {
 }
 
 onMounted(load);
+
+// The queue store's `orders` list is filter-scoped: a socket event elsewhere (e.g. this
+// same order being accepted) can trigger a refetch under the currently-active queue filter,
+// which replaces the whole list and can drop this order if it no longer matches that filter.
+// That doesn't mean the order is gone — re-fetch it individually before treating it as
+// "not found".
+watch(order, (current) => {
+  if (current || !loaded.value || recovering.value) {
+    return;
+  }
+  recovering.value = true;
+  staffOrdersStore
+    .fetchOrder(props.orderId)
+    .catch((caught) => {
+      loadError.value = toUserSafeErrorMessage(caught);
+    })
+    .finally(() => {
+      recovering.value = false;
+    });
+});
 
 async function runAction(action: () => Promise<void>): Promise<void> {
   actionError.value = null;
@@ -144,7 +175,7 @@ async function onViewReceipt(): Promise<void> {
       ← Back to queue
     </button>
 
-    <LoadingState v-if="loading" label="Loading order..." />
+    <LoadingState v-if="loading || recovering" label="Loading order..." />
     <ErrorState v-else-if="loadError || !order" :message="loadError ?? 'Order not found.'" @retry="load" />
 
     <template v-else>

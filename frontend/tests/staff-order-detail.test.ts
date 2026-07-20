@@ -6,6 +6,7 @@ import { configureAuthIntegration } from "../src/api/http";
 import * as staffOrdersApi from "../src/api/staff-orders";
 import * as staffGuestSessionsApi from "../src/api/staff-guest-sessions";
 import OrderDetailView from "../src/views/staff/OrderDetailView.vue";
+import { useStaffOrdersStore } from "../src/stores/staff-orders.store";
 import { OrderStatus, OrderPaymentStatus } from "../src/types/enums";
 import router from "../src/router";
 
@@ -161,6 +162,35 @@ describe("OrderDetailView", () => {
     expect(init.headers.Authorization).toBe("Bearer test-token");
     expect(openSpy).toHaveBeenCalledWith(expect.stringMatching(/^blob:/), "_blank", "noopener");
     expect(wrapper.text()).not.toContain("Please allow pop-ups");
+  });
+
+  it("recovers the order after a filtered socket refetch drops it from the store's list", async () => {
+    const getStaffOrderSpy = vi
+      .spyOn(staffOrdersApi, "getStaffOrder")
+      .mockResolvedValue({ order: makeOrder({ orderStatus: OrderStatus.READY }) as never });
+    const listStaffOrdersSpy = vi
+      .spyOn(staffOrdersApi, "listStaffOrders")
+      .mockResolvedValue({ orders: [] as never });
+    await router.isReady();
+
+    const wrapper = mount(OrderDetailView, { props: { orderId: "o1" }, global: { plugins: [router] } });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("ORD-1");
+    expect(getStaffOrderSpy).toHaveBeenCalledTimes(1);
+
+    // Simulate the socket store's `refetchCurrentFilters()` running under a queue filter
+    // (e.g. "Pending") that this now-READY order no longer matches — this replaces the
+    // whole `orders` list and would normally drop the order the detail view is showing.
+    const staffOrdersStore = useStaffOrdersStore();
+    await staffOrdersStore.fetchOrders({ status: OrderStatus.PENDING });
+    await flushPromises();
+
+    expect(listStaffOrdersSpy).toHaveBeenCalled();
+    // The view should have re-fetched this single order rather than flashing "not found".
+    expect(getStaffOrderSpy).toHaveBeenCalledTimes(2);
+    expect(wrapper.text()).not.toContain("Order not found");
+    expect(wrapper.text()).toContain("ORD-1");
   });
 
   it("surfaces an error when the browser blocks the receipt pop-up", async () => {
