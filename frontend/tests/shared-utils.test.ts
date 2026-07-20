@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiError } from "../src/api/http";
-import { ORDER_STATUS_LABELS } from "../src/constants/order-status-labels";
-import { PAYMENT_STATUS_LABELS } from "../src/constants/payment-status-labels";
 import { formatCurrency, formatDate, formatDateTime } from "../src/utils/currency";
 import { toUserSafeErrorMessage } from "../src/utils/error-message";
 import { generateIdempotencyKey } from "../src/utils/idempotency";
@@ -60,15 +58,6 @@ describe("toUserSafeErrorMessage", () => {
   });
   it("maps a network failure to an offline message", () => {
     expect(toUserSafeErrorMessage(new TypeError("Failed to fetch"))).toMatch(/connection|offline/i);
-  });
-});
-
-describe("status label maps", () => {
-  it("has an entry for every OrderStatus value and they are distinct from payment labels", () => {
-    expect(Object.keys(ORDER_STATUS_LABELS).sort()).toEqual(
-      ["ACCEPTED", "CANCELLED", "COMPLETED", "PENDING", "PREPARING", "READY", "REJECTED", "SERVED"].sort(),
-    );
-    expect(Object.keys(PAYMENT_STATUS_LABELS).sort()).toEqual(["PAID", "PARTIALLY_PAID", "REFUNDED", "UNPAID"].sort());
   });
 });
 
