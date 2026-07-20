@@ -8,12 +8,14 @@ import LoadingState from "../../components/feedback/LoadingState.vue";
 import StaffOrderCard from "../../components/domain/StaffOrderCard.vue";
 import { useAuthStore } from "../../stores/auth.store";
 import { useStaffOrdersStore } from "../../stores/staff-orders.store";
+import { useStaffSocketStore } from "../../stores/staff-socket.store";
 import { OrderStatus } from "../../types/enums";
 import { toUserSafeErrorMessage } from "../../utils/error-message";
 import { useRouter } from "vue-router";
 
 const authStore = useAuthStore();
 const staffOrdersStore = useStaffOrdersStore();
+const staffSocketStore = useStaffSocketStore();
 const router = useRouter();
 
 const FILTERS: Array<{ key: string; label: string; status?: OrderStatus }> = [
@@ -33,6 +35,7 @@ async function selectFilter(key: string, status?: OrderStatus): Promise<void> {
 }
 
 onMounted(() => {
+  staffSocketStore.init();
   void staffOrdersStore.fetchOrders();
 });
 
