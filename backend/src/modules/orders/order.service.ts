@@ -123,6 +123,7 @@ export function toSafeOrder(order: {
     tableId: order.restaurantTable?.uuid ?? null,
     tableNumber: order.restaurantTable?.tableNumber ?? null,
     customerId: order.customer?.uuid ?? null,
+    guestSessionId: order.guestSession?.uuid ?? null,
     customerName: order.customerName,
     customerPhone: order.customerPhone,
     subtotal: toMoneyString(order.subtotal),

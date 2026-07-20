@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
 type ApiErrorPayload = {
   code: string;
@@ -57,6 +57,10 @@ let inFlightRefresh: Promise<string | null> | null = null;
 
 export function configureAuthIntegration(config: AuthIntegration): void {
   authIntegration = config;
+}
+
+export function getAccessToken(): string | null {
+  return authIntegration.getToken();
 }
 
 function refreshOnce(): Promise<string | null> {

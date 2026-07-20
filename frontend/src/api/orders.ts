@@ -1,4 +1,4 @@
-import { http } from "./http";
+import { API_BASE_URL, http } from "./http";
 import type { SafeOrder } from "../types/order";
 
 export type CreateGuestOrderInput = {
@@ -19,8 +19,6 @@ export function listGuestOrders() {
 export function getGuestOrder(orderPublicId: string) {
   return http.get<{ order: SafeOrder }>(`/guest/orders/${orderPublicId}`);
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
 export function getGuestReceiptUrl(orderPublicId: string) {
   return `${API_BASE_URL}/guest/orders/${orderPublicId}/receipt`;

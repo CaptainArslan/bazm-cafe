@@ -20,6 +20,7 @@ export type SafeOrder = {
   tableId: string | null;
   tableNumber: string | null;
   customerId: string | null;
+  guestSessionId: string | null;
   customerName: string | null;
   customerPhone: string | null;
   subtotal: string;
