@@ -34,3 +34,6 @@ Thumbs.db
 *.tsbuildinfo
 
 # backend/ has its own .gitignore for its uploads/ and generated Prisma client
+
+# Git worktrees for isolated agent work
+.worktrees/
