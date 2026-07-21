@@ -136,9 +136,10 @@ Following the existing Vitest + Vue Test Utils pattern used for
   asserts: loading state shows first, tiles render correct computed values
   given fixture data (including today-vs-not-today date edge cases and the
   low-stock boundary), error state shows and retry re-fetches on failure.
-- `AdminLayout.spec.ts` (or nav-specific test) — asserts all 11 nav links
-  are present and point to the correct route names, drawer opens/closes on
-  mobile breakpoint interaction, active link gets the highlight class.
+- `AdminLayout.spec.ts` (or nav-specific test) — asserts all 12 nav links
+  (dashboard + 11 modules) are present and point to the correct route names,
+  drawer opens/closes on mobile breakpoint interaction, active link gets the
+  highlight class.
 - `ComingSoonView.spec.ts` — renders the passed title.
 - Router test addition: new placeholder routes resolve and require
   `role: "ADMIN"` like existing admin routes.
