@@ -215,4 +215,28 @@ describe("OrderDetailView", () => {
 
     expect(wrapper.text()).toContain("Please allow pop-ups to view the receipt.");
   });
+
+  it("shows the rejection reason for a REJECTED order", async () => {
+    vi.spyOn(staffOrdersApi, "getStaffOrder").mockResolvedValue({
+      order: makeOrder({ orderStatus: OrderStatus.REJECTED, rejectionReason: "Out of stock" }) as never,
+    });
+    await router.isReady();
+
+    const wrapper = mount(OrderDetailView, { props: { orderId: "o1" }, global: { plugins: [router] } });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Rejected: Out of stock");
+  });
+
+  it("shows the cancellation reason for a CANCELLED order", async () => {
+    vi.spyOn(staffOrdersApi, "getStaffOrder").mockResolvedValue({
+      order: makeOrder({ orderStatus: OrderStatus.CANCELLED, cancellationReason: "Customer no-show" }) as never,
+    });
+    await router.isReady();
+
+    const wrapper = mount(OrderDetailView, { props: { orderId: "o1" }, global: { plugins: [router] } });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Cancelled: Customer no-show");
+  });
 });

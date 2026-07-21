@@ -14,12 +14,14 @@ import { generateRecoveryCode } from "../../api/staff-guest-sessions";
 import { getStaffReceiptUrl } from "../../api/staff-orders";
 import { getAccessToken } from "../../api/http";
 import { useStaffOrdersStore } from "../../stores/staff-orders.store";
+import { useStaffSocketStore } from "../../stores/staff-socket.store";
 import { CustomerType, OrderStatus } from "../../types/enums";
 import { toUserSafeErrorMessage } from "../../utils/error-message";
 
 const props = defineProps<{ orderId: string }>();
 const router = useRouter();
 const staffOrdersStore = useStaffOrdersStore();
+const staffSocketStore = useStaffSocketStore();
 
 const loading = ref(true);
 const loadError = ref<string | null>(null);
@@ -62,7 +64,10 @@ async function load(): Promise<void> {
   }
 }
 
-onMounted(load);
+onMounted(() => {
+  staffSocketStore.init();
+  void load();
+});
 
 // The queue store's `orders` list is filter-scoped: a socket event elsewhere (e.g. this
 // same order being accepted) can trigger a refetch under the currently-active queue filter,
@@ -196,6 +201,13 @@ async function onViewReceipt(): Promise<void> {
       <div class="mt-5 rounded-2xl border border-bz-border bg-white p-4">
         <OrderStatusTimeline :status="order.orderStatus" />
       </div>
+
+      <p v-if="order.rejectionReason" class="mt-3 text-sm text-bz-red">
+        Rejected: {{ order.rejectionReason }}
+      </p>
+      <p v-if="order.cancellationReason" class="mt-3 text-sm text-bz-red">
+        Cancelled: {{ order.cancellationReason }}
+      </p>
 
       <div class="mt-5 rounded-2xl border border-bz-border bg-white p-4">
         <div

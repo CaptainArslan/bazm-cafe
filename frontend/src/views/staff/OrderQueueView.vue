@@ -25,6 +25,7 @@ const FILTERS: Array<{ key: string; label: string; status?: OrderStatus }> = [
   { key: OrderStatus.PREPARING, label: "Preparing", status: OrderStatus.PREPARING },
   { key: OrderStatus.READY, label: "Ready", status: OrderStatus.READY },
   { key: OrderStatus.SERVED, label: "Served", status: OrderStatus.SERVED },
+  { key: OrderStatus.CANCELLED, label: "Cancelled", status: OrderStatus.CANCELLED },
 ];
 
 const activeFilterKey = ref("ALL");
