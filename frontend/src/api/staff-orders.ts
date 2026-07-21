@@ -52,6 +52,10 @@ export function rejectOrder(orderId: string, reason: string) {
   return authHttp.post<{ order: SafeOrder }>(`/orders/${orderId}/reject`, { reason });
 }
 
+export function cancelOrder(orderId: string, reason: string) {
+  return authHttp.post<{ order: SafeOrder }>(`/orders/${orderId}/cancel`, { reason });
+}
+
 export function attachCustomerToOrder(orderId: string, input: AttachCustomerInput) {
   return authHttp.post<{ order: SafeOrder }>(`/orders/${orderId}/customer`, input);
 }

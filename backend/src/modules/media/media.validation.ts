@@ -8,6 +8,9 @@ export const uploadMediaQuerySchema = z
   })
   .strict();
 
+/** Same shape as the upload query — reused as-is for the list route. */
+export const listMediaQuerySchema = uploadMediaQuerySchema;
+
 export const deleteMediaSchema = z
   .object({
     path: z
@@ -19,4 +22,5 @@ export const deleteMediaSchema = z
   .strict();
 
 export type UploadMediaQuery = z.infer<typeof uploadMediaQuerySchema>;
+export type ListMediaQuery = UploadMediaQuery;
 export type DeleteMediaInput = z.infer<typeof deleteMediaSchema>;

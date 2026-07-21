@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { listAdminPayments } from "../src/api/admin-payments";
+import { getPayment, listAdminPayments, listOrderPayments, recordPayment, reversePayment } from "../src/api/admin-payments";
 
 function jsonResponse(status: number, body: unknown) {
   return { ok: status >= 200 && status < 300, status, json: () => Promise.resolve(body) };
@@ -45,5 +45,47 @@ describe("admin payments api", () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toContain("/payments");
     expect(init.method).toBe("GET");
+  });
+});
+
+describe("admin payments api — mutations", () => {
+  it("getPayment fetches one payment", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { success: true, message: "ok", data: { payment: { id: "pay1" } } }));
+    vi.stubGlobal("fetch", fetchMock);
+    await getPayment("pay1");
+    expect(fetchMock.mock.calls[0][0]).toContain("/payments/pay1");
+  });
+
+  it("listOrderPayments fetches payments for an order", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { success: true, message: "ok", data: { payments: [] } }));
+    vi.stubGlobal("fetch", fetchMock);
+    await listOrderPayments("o1");
+    expect(fetchMock.mock.calls[0][0]).toContain("/orders/o1/payments");
+  });
+
+  it("recordPayment posts the payment payload to the order", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(201, { success: true, message: "ok", data: { payment: { id: "pay1" }, order: { id: "o1" }, duplicated: false, sessionClosed: false, receiptRawToken: null } }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await recordPayment("o1", { amount: 100, method: "CASH" });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toContain("/orders/o1/payments");
+    expect(init.method).toBe("POST");
+  });
+
+  it("reversePayment posts the reason", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(200, { success: true, message: "ok", data: { payment: { id: "pay1" }, order: { id: "o1" } } }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await reversePayment("pay1", "Customer disputed charge");
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toContain("/payments/pay1/reverse");
+    expect(JSON.parse(init.body)).toEqual({ reason: "Customer disputed charge" });
   });
 });

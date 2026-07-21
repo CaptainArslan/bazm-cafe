@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { deleteMedia, uploadMedia } from "../src/api/media";
+import { deleteMedia, listMedia, uploadMedia } from "../src/api/media";
 
 function jsonResponse(status: number, body: unknown) {
   return { ok: status >= 200 && status < 300, status, json: () => Promise.resolve(body) };
@@ -54,5 +54,18 @@ describe("media api", () => {
     expect(url).toContain("/media");
     expect(init.method).toBe("DELETE");
     expect(JSON.parse(init.body as string)).toEqual({ path: "/uploads/media/products/abc.png" });
+  });
+});
+
+describe("media api — list", () => {
+  it("listMedia fetches media for a folder", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(200, { success: true, message: "ok", data: { media: [] } }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await listMedia("products");
+
+    expect(fetchMock.mock.calls[0][0]).toContain("/media?folder=products");
   });
 });

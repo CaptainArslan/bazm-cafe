@@ -4,6 +4,7 @@ import { configureAuthIntegration } from "../src/api/http";
 import {
   acceptOrder,
   attachCustomerToOrder,
+  cancelOrder,
   getStaffOrder,
   getStaffReceiptUrl,
   listStaffOrders,
@@ -12,7 +13,7 @@ import {
   rejectOrder,
   startPreparingOrder,
 } from "../src/api/staff-orders";
-import { searchCustomers } from "../src/api/staff-customers";
+import { createCustomerRecord, getCustomerRecord, searchCustomers, updateCustomerRecord } from "../src/api/staff-customers";
 import { generateRecoveryCode } from "../src/api/staff-guest-sessions";
 import { getSettings } from "../src/api/settings";
 
@@ -77,6 +78,14 @@ describe("staff orders api", () => {
     expect(JSON.parse(init.body)).toEqual({ reason: "Kitchen is out of this item." });
   });
 
+  it("cancelOrder posts the reason to the cancel endpoint", async () => {
+    mockFetchOnce({ success: true, message: "ok", data: { order: { id: "o1" } } });
+    await cancelOrder("o1", "Table double-booked");
+    const [url, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(url).toContain("/orders/o1/cancel");
+    expect(JSON.parse(init.body)).toEqual({ reason: "Table double-booked" });
+  });
+
   it("attachCustomerToOrder posts a customerId payload", async () => {
     mockFetchOnce({ success: true, message: "ok", data: { order: { id: "o1" } } });
     await attachCustomerToOrder("o1", { customerId: "c1" });
@@ -103,6 +112,46 @@ describe("staff customers api", () => {
     await searchCustomers({ search: "ali" });
     const [url] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(url).toContain("/customers?search=ali");
+  });
+
+  it("getCustomerRecord fetches the detail with financial summary", async () => {
+    mockFetchOnce({
+      success: true,
+      message: "ok",
+      data: {
+        customer: {
+          id: "c1",
+          summary: { orderCount: 2, unpaidOrderCount: 1, partiallyPaidOrderCount: 0, outstandingBalance: "50.00" },
+        },
+      },
+    });
+
+    const result = await getCustomerRecord("c1");
+
+    expect(result.customer.summary.outstandingBalance).toBe("50.00");
+    const [url] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(url).toContain("/customers/c1");
+  });
+
+  it("createCustomerRecord posts name/phone and returns matchedByPhone", async () => {
+    mockFetchOnce({ success: true, message: "ok", data: { customer: { id: "c1" }, matchedByPhone: [] } }, true, 201);
+
+    const result = await createCustomerRecord({ name: "Ali", phone: "03001234567" });
+
+    expect(result.matchedByPhone).toEqual([]);
+    const [url, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(url).toContain("/customers");
+    expect(init.method).toBe("POST");
+  });
+
+  it("updateCustomerRecord patches the given fields", async () => {
+    mockFetchOnce({ success: true, message: "ok", data: { customer: { id: "c1" } } });
+
+    await updateCustomerRecord("c1", { name: "Ali B" });
+
+    const [url, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(url).toContain("/customers/c1");
+    expect(init.method).toBe("PATCH");
   });
 });
 
