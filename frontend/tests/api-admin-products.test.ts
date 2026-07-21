@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createProduct, deleteProduct, getAdminProduct, listAdminProducts, updateProduct, updateProductStatus } from "../src/api/admin-products";
+import { adjustProductStock, createProduct, deleteProduct, getAdminProduct, listAdminProducts, updateProduct, updateProductStatus } from "../src/api/admin-products";
 
 function jsonResponse(status: number, body: unknown) {
   return { ok: status >= 200 && status < 300, status, json: () => Promise.resolve(body) };
@@ -91,5 +91,18 @@ describe("admin products api — mutations", () => {
     vi.stubGlobal("fetch", fetchMock);
     await deleteProduct("p1");
     expect(fetchMock.mock.calls[0][1].method).toBe("DELETE");
+  });
+});
+
+describe("admin products api — stock", () => {
+  it("adjustProductStock sends the delta and reason", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { success: true, message: "ok", data: { product: { id: "p1" } } }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await adjustProductStock("p1", { quantityDelta: -5, reason: "Spoiled stock" });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toContain("/products/p1/stock");
+    expect(JSON.parse(init.body)).toEqual({ quantityDelta: -5, reason: "Spoiled stock" });
   });
 });

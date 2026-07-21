@@ -39,3 +39,7 @@ export function updateProductStatus(productId: string, isAvailable: boolean) {
 export function deleteProduct(productId: string) {
   return authHttp.delete<Record<string, never>>(`/products/${productId}`);
 }
+
+export function adjustProductStock(productId: string, input: { quantityDelta: number; reason: string }) {
+  return authHttp.patch<{ product: SafeProduct }>(`/products/${productId}/stock`, input);
+}

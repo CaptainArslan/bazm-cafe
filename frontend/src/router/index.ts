@@ -173,8 +173,7 @@ const router = createRouter({
         {
           path: "stock",
           name: "admin.stock",
-          component: () => import("../views/admin/ComingSoonView.vue"),
-          props: () => ({ title: "Stock" }),
+          component: () => import("../views/admin/StockView.vue"),
           meta: { role: "ADMIN" },
         },
         {
