@@ -75,6 +75,7 @@ If reset already ran the seed (check console output), you can skip `npm run db:s
 | `npx prisma studio` | Browse tables in the browser |
 
 **Never** run `migrate reset` against production.
+
 ### Frontend
 
 ```bash
@@ -131,6 +132,9 @@ cd frontend && npm run test
 
 ## Documentation
 
-- [`docs/BAZM_BACKEND_ARCHITECTURE_CONTRACT.md`](docs/BAZM_BACKEND_ARCHITECTURE_CONTRACT.md) — the backend's source of truth: module boundaries, layer responsibilities, DB/auth/socket contracts, and the operating rules any agent must follow before touching backend code.
-- [`docs/BAZM_AUTH_API_IMPLEMENTATION_PLAN.md`](docs/BAZM_AUTH_API_IMPLEMENTATION_PLAN.md) — the phased plan the auth module was built against.
-- [`backend/docs/API_TESTING.md`](backend/docs/API_TESTING.md) — full endpoint cheat sheet, Postman setup, and a recommended manual test flow end-to-end (login → menu → order → payment).
+- [`docs/README.md`](docs/README.md) — index of all project docs
+- [`docs/BAZM_CAFE_WORKFLOW.md`](docs/BAZM_CAFE_WORKFLOW.md) — end-to-end customer / staff / admin workflow
+- [`docs/BAZM_BACKEND_ARCHITECTURE_CONTRACT.md`](docs/BAZM_BACKEND_ARCHITECTURE_CONTRACT.md) — backend architecture contract for implementers and AI agents
+- [`docs/BAZM_AUTH_API_IMPLEMENTATION_PLAN.md`](docs/BAZM_AUTH_API_IMPLEMENTATION_PLAN.md) — historical auth module plan (core auth delivered)
+- [`backend/docs/API_TESTING.md`](backend/docs/API_TESTING.md) — Postman setup, DB refresh/seed, full endpoint cheat sheet
+- [`backend/README.md`](backend/README.md) — Prisma migrate / seed / reset commands

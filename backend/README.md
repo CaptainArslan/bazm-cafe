@@ -377,6 +377,14 @@ npm run db:seed
 
 Do **not** run `migrate reset` against production — it deletes and recreates the database.
 
+## Documentation
+
+- [`../docs/README.md`](../docs/README.md) — docs index
+- [`docs/API_TESTING.md`](docs/API_TESTING.md) — Postman + full endpoint cheat sheet
+- [`docs/postman/`](docs/postman/) — collection and environment JSON
+- [`../docs/BAZM_CAFE_WORKFLOW.md`](../docs/BAZM_CAFE_WORKFLOW.md) — product workflow
+- [`../docs/BAZM_BACKEND_ARCHITECTURE_CONTRACT.md`](../docs/BAZM_BACKEND_ARCHITECTURE_CONTRACT.md) — architecture contract
+
 ## Notes
 
 This backend is ready for local development and can be extended with additional restaurant workflows as needed.

@@ -63,13 +63,14 @@ BAZM Café is a mobile-first restaurant ordering platform designed to operate on
 
 - **Customer:** uses a secure guest ordering session (dine-in via table QR, or takeaway without a table). Customers do not create user accounts in V1.
 - **Staff:** authenticates as `STAFF`, reviews orders, accepts or rejects pending orders, advances preparation statuses through `SERVED`, searches/creates customers, and attaches customers to orders. Staff do not record payments or manage catalog/tables.
-- **Administrator:** authenticates as `ADMIN`, manages staff, customers, tables, QR codes, categories, products, stock, cafe settings (tax / service charge), orders, cancellations, and manual payment recording.
+- **Administrator:** authenticates as `ADMIN`, manages staff, customers, tables, QR codes, categories, products, stock, media uploads, cafe settings (tax / service charge), orders, cancellations, and manual payment recording / reversal.
 
 ### V1 modules
 
 - auth
 - staff
 - customers
+- media (image upload/delete under `/uploads/media`)
 - tables
 - categories
 - products
@@ -77,6 +78,7 @@ BAZM Café is a mobile-first restaurant ordering platform designed to operate on
 - guest-sessions
 - orders
 - payments
+- receipts (post-session receipt access cookie)
 
 There is **no kitchen module** in V1. Kitchen/operational staff work through the orders APIs. An empty `src/modules/kitchen/` placeholder may remain unused until explicitly removed.
 
@@ -90,19 +92,24 @@ There is **no kitchen module** in V1. Kitchen/operational staff work through the
 - dependency on Firebase Cloud Messaging
 - online payment processing
 - kitchen CRUD / multi-kitchen routing
-- refunds / payment voiding (enum values may exist; APIs are not authorized)
 - reservations
 
 No excluded feature may be introduced indirectly through schema fields, routes, abstractions, or dependencies.
+
+Payment **reversal** (`POST /api/v1/payments/:paymentId/reverse`) is authorized for `ADMIN` in V1 (audit-logged). Online gateways remain excluded.
 
 ### Approved image packages (installed)
 
 - `qrcode` — printable table QR PNG generation
 - `sharp` — receipt-image composition
+- `multer` — multipart image uploads for catalog/staff/customer media
 
 Upload directories:
-- `public/uploads/qr`
-- `public/uploads/receipts`
+- `public/uploads/qr` — table QR PNGs
+- `public/uploads/receipts` — receipt images
+- `public/uploads/media/{general|categories|products|staff|customers}` — optional entity images
+
+Optional `imagePath` (and response `imageUrl`) is supported on staff, customers, categories, and products. Paths must be values returned by `POST /api/v1/media`.
 
 Kitchen placeholder remains unused.
 
@@ -125,15 +132,15 @@ Kitchen placeholder remains unused.
 
 ### Frontend
 
-- React
+- Vue.js 3
 - TypeScript
 - Vite
+- Vue Router
+- Pinia
 - Tailwind CSS
-- shadcn/ui
-- TanStack Query
-- React Hook Form
-- Zod
-- PWA support
+- shadcn-vue / Reka UI (as used in `frontend/`)
+- TanStack Query (where used)
+- Socket.IO client (contract ready; wire as needed)
 
 The backend must not depend on frontend implementation details beyond documented HTTP, cookie, CORS, and Socket.IO contracts.
 
@@ -644,7 +651,7 @@ Payment status is separate from order status:
 - `UNPAID`
 - `PARTIALLY_PAID`
 - `PAID`
-- `REFUNDED` (preserved; no refund APIs in V1)
+- `REFUNDED` (preserved on enums; admin payment **reverse** is authorized in V1 via `/api/v1/payments/:paymentId/reverse`)
 
 Inventory behavior:
 

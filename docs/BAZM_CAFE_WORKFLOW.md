@@ -62,9 +62,9 @@ V1 operational specification for local café ordering, table sessions, order ful
 | **Document** | **Value**                                                       |
 |--------------|-----------------------------------------------------------------|
 | Purpose      | Single source of truth for product, UI/UX, API and QA workflows |
-| Version      | V1.0                                                            |
+| Version      | V1.1                                                            |
 | Prepared     | 19 July 2026                                                    |
-| Status       | Implementation-ready subject to final schema/API naming         |
+| Status       | Aligned with implemented `/api/v1` routes (see API_TESTING.md)  |
 | Core rule    | Many orders per session; separate order and payment statuses    |
 
 | **Non-negotiable:** Order status describes operational fulfillment. Payment status describes financial settlement. They are stored, displayed and transitioned separately. |
@@ -110,6 +110,7 @@ This document defines the complete end-to-end behavior of the BAZM Café V1 appl
 
 - Taxes, discounts, tips, service charges and delivery fees unless separately approved
 
+> **Implemented note (V1):** Cafe-wide `taxRatePercent` and `serviceChargePercent` via `/api/v1/settings` are applied on guest order create. Per-line discounts, tips, and delivery fees remain out of scope.
 # 2. Actors and authority
 
 | **Capability**              | **Customer** | **Staff**         | **Admin**     |
@@ -202,7 +203,7 @@ The workflow depends on clear ownership. A guest session represents one dining o
 
 2.  Application instructs the customer to scan the printed table QR using the phone’s native camera.
 
-3.  QR opens the secure local table URL containing an opaque token.
+3.  QR opens the secure local table URL containing an opaque `tableToken` (not the table UUID). Manual entry of that same long token is a camera fallback until a short table code exists. Resolve via `POST /api/v1/guest/tables/resolve`; start session via `POST /api/v1/guest/sessions` with `orderType: "DINE_IN"` and `tableToken`.
 
 4.  Backend hashes and validates the token, verifies that the table is active and checks for an existing session.
 
@@ -233,7 +234,8 @@ The workflow depends on clear ownership. A guest session represents one dining o
 
 - Show only active and available products from active categories.
 
-- Product card shows name, description, current selling price, image and preparation time.
+- Product card shows name, description, current selling price, optional image and preparation time (`preparationMinutes`).
+- Images are optional: admin/staff upload via `/api/v1/media`, then set `imagePath` on the entity.
 
 - Customer may add quantities, remove items and add an order note before submission.
 
@@ -432,13 +434,15 @@ Admin sees the operational picture plus financial and configuration controls. Da
 
 | **Module**  | **Create / update rules**                                                                          | **Deletion and history rules**                                               |
 |-------------|----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------|
-| Staff       | Create profile/login, assign role, activate/deactivate, reset access according to auth policy.     | Deactivate staff with history; do not remove audit identity.                 |
-| Customers   | Name required; phone optional generally and required for Parcel; search before duplicate creation. | Do not hard-delete customers with orders/payments.                           |
-| Categories  | Create, view, edit, order and activate/deactivate.                                                 | Block unsafe deletion when referenced; historical data remains intact.       |
-| Products    | Name, category, description, price, prep time, image, active, available, display order.            | Historical order snapshots remain unchanged; deactivate referenced products. |
-| Tables / QR | Create/edit table, set available/out of service, explicitly regenerate QR.                         | Editing does not change QR; history prevents hard deletion.                  |
+| Staff       | Create profile/login, optional image, activate/deactivate, admin password reset.                   | Deactivate staff with history; do not remove audit identity.                 |
+| Customers   | Name required; phone optional; optional image; search before duplicate creation.                   | Do not hard-delete customers with orders/payments.                           |
+| Categories  | Create, view, edit, order, optional image, activate/deactivate.                                    | Block unsafe deletion when referenced; historical data remains intact.       |
+| Products    | Name, category, description, price, `preparationMinutes`, optional image, stock, available, order. | Historical order snapshots remain unchanged; deactivate referenced products. |
+| Media       | Upload JPEG/PNG/WebP/GIF to `/uploads/media/{folder}`; attach returned `path` as `imagePath`.      | Delete only under `/uploads/media/`; entity may keep a stale path if deleted.|
+| Tables / QR | Create/edit table, set available/out of service, regenerate QR. Raw `tableToken` never returned by table APIs. | Editing does not change QR; regenerate issues a new token; history prevents hard deletion. |
+| Settings    | Admin sets tax % and service charge % (defaults 0).                                                | Singleton row; no delete.                                                    |
 | Orders      | Action workflow only.                                                                              | No unrestricted CRUD or item editing.                                        |
-| Payments    | Create and reverse immutable records.                                                              | Never directly edit or hard-delete.                                          |
+| Payments    | Create and reverse immutable records (admin).                                                      | Never directly edit or hard-delete.                                          |
 
 ## 9.1 Standard CRUD state coverage
 
@@ -852,31 +856,32 @@ Follow the existing response helper. Responses must be predictable and machine-r
 
 Validation errors map field paths to stable messages. Never leak stack traces, Prisma errors, token hashes or internal sequential IDs.
 
-## 21.5 Suggested API route map
+## 21.5 Implemented API route map
 
-Route names may follow existing conventions, but capabilities and authorization cannot change.
+Authoritative testing reference: [`backend/docs/API_TESTING.md`](../backend/docs/API_TESTING.md). Summary:
 
 ### Guest routes
 
 | Method | Route | Purpose |
 |---|---|---|
-| `POST` | `/api/v1/guest-sessions/dine-in/claim` | Validate QR and create or restore a dine-in session. |
-| `POST` | `/api/v1/guest-sessions/parcel` | Create parcel session with required name and phone. |
-| `GET` | `/api/v1/guest-sessions/current` | Current authorized session, orders and aggregate balance. |
-| `POST` | `/api/v1/guest-sessions/recovery/redeem` | Redeem a single-use recovery code. |
-| `POST` | `/api/v1/guest-sessions/end` | Safely end the current settled session. |
-| `GET` | `/api/v1/menu` | Active categories and available products. |
-| `POST` | `/api/v1/orders` | Create a new order under the current session. |
-| `GET` | `/api/v1/orders` | List current session orders. |
-| `GET` | `/api/v1/orders/:orderId` | View an order owned by the current session. |
-| `GET` | `/api/v1/receipts/:receiptToken` | Authorized HTML receipt. |
-| `GET` | `/api/v1/receipts/:receiptToken/image` | Authorized receipt image. |
+| `POST` | `/api/v1/guest/sessions` | Create takeaway or dine-in session (`tableToken` required for dine-in). |
+| `POST` | `/api/v1/guest/tables/resolve` | Validate QR/`tableToken` and return table preview (no session). |
+| `POST` | `/api/v1/guest/sessions/recover` | Redeem a single-use recovery code. |
+| `GET` | `/api/v1/guest/sessions/current` | Current authorized session. |
+| `POST` | `/api/v1/guest/sessions/close` | End settled session; may issue receipt-access cookie. |
+| `GET` | `/api/v1/guest/menu` | Visible categories / available products. |
+| `POST` | `/api/v1/guest/orders` | Create order under the current session. |
+| `GET` | `/api/v1/guest/orders` | List current session orders. |
+| `GET` | `/api/v1/guest/orders/:orderPublicId` | View an order owned by the current session. |
+| `GET` | `/api/v1/guest/orders/:orderPublicId/receipt` | Session HTML receipt. |
+| `GET` | `/api/v1/guest/orders/:orderPublicId/receipt-image` | Session receipt image. |
+| `GET` | `/api/v1/receipts/orders/:orderPublicId`… | Post-close receipt access via `bazm_receipt_access` cookie. |
 
 ### Staff/Admin operational routes
 
 | Method | Route | Authorization | Purpose |
 |---|---|---|---|
-| `GET` | `/api/v1/operations/orders` | Staff/Admin | Filtered operational queue. |
+| `GET` | `/api/v1/orders` | Staff/Admin | Filtered operational queue. |
 | `POST` | `/api/v1/orders/:id/accept` | Staff/Admin | `PENDING → ACCEPTED`. |
 | `POST` | `/api/v1/orders/:id/reject` | Staff/Admin | `PENDING → REJECTED`; reason required. |
 | `POST` | `/api/v1/orders/:id/start-preparing` | Staff/Admin | `ACCEPTED → PREPARING`. |
@@ -885,11 +890,13 @@ Route names may follow existing conventions, but capabilities and authorization 
 | `POST` | `/api/v1/orders/:id/cancel` | Admin | Cancel Accepted, Preparing or Ready; reason required. |
 | `POST` | `/api/v1/orders/:id/payments` | Admin | Record immutable payment with idempotency. |
 | `POST` | `/api/v1/payments/:id/reverse` | Admin | Audited reversal; reason required. |
-| `POST` | `/api/v1/guest-sessions/:id/recovery-code` | Staff/Admin | Generate five-minute recovery code. |
-| `POST` | `/api/v1/guest-sessions/:id/release` | Staff/Admin | Safe release only. |
-| `POST` | `/api/v1/guest-sessions/:id/force-release` | Admin | Preserve records and outstanding debt. |
+| `POST` | `/api/v1/guest-sessions/:id/recovery-codes` | Staff/Admin | Generate recovery code. |
+| `POST` | `/api/v1/tables/:id/release` | Staff/Admin | Safe table/session release. |
+| `POST` | `/api/v1/tables/:id/force-release` | Admin | Force release; preserve records and debt. |
+| `POST`/`DELETE` | `/api/v1/media` | Staff/Admin | Optional image upload / delete. |
+| `GET`/`PATCH` | `/api/v1/settings` | Staff get / Admin patch | Tax and service charge %. |
 
-Admin resource routes must provide complete list, search/filter, view, create, update, activate/deactivate and safe-delete/block behavior for staff, customers, categories, products and tables/QR. Orders remain action workflows; payments remain immutable records.
+Admin resource routes provide list/search/view/create/update/status for staff, customers, categories, products and tables/QR. Optional `imagePath` on staff, customers, categories, products. Products include `preparationMinutes`. Orders remain action workflows; payments remain immutable records (with admin reverse).
 
 ## 21.6 Explicit transition service
 

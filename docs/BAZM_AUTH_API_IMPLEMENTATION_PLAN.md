@@ -1,8 +1,10 @@
 # BAZM Café Authentication API — Step-by-Step Implementation Plan
 
-**Status:** Planning only — no implementation authorized by this document  
+**Status:** Historical plan — core auth routes below are implemented (`login`, `refresh`, `logout`, `logout-all`, `me`). Forgot/reset/change-password remain optional follow-ups.  
 **Depends on:** `BAZM_BACKEND_ARCHITECTURE_CONTRACT.md`  
 **Target:** Complete, secure, tested authentication APIs for admin and staff  
+
+For current endpoint testing, prefer [`backend/docs/API_TESTING.md`](../backend/docs/API_TESTING.md).
 
 ---
 
