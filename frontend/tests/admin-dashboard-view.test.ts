@@ -117,7 +117,7 @@ describe("admin DashboardView", () => {
       ],
     });
     vi.spyOn(adminProductsApi, "listAdminProducts").mockResolvedValue({
-      products: [makeProduct("prod1", 2, 5), makeProduct("prod2", 10, 5)],
+      products: [makeProduct("prod1", 2, 5), makeProduct("prod2", 10, 5), makeProduct("prod3", 5, 5)],
     });
 
     const wrapper = mount(DashboardView);
@@ -129,8 +129,8 @@ describe("admin DashboardView", () => {
     expect(wrapper.get('[data-test="tile-needs-attention"]').text()).toContain("2");
     // Only p1 is COMPLETED, not voided, and created today: 50.00. p2 is yesterday, p3 is voided.
     expect(wrapper.get('[data-test="tile-todays-revenue"]').text()).toContain("50.00");
-    // Only prod1 (availableQuantity 2 <= lowStockThreshold 5) counts as low stock.
-    expect(wrapper.get('[data-test="tile-low-stock"]').text()).toContain("1");
+    // prod1 (availableQuantity 2 <= lowStockThreshold 5) and prod3 (availableQuantity 5 === lowStockThreshold 5) count as low stock.
+    expect(wrapper.get('[data-test="tile-low-stock"]').text()).toContain("2");
   });
 
   it("shows an error state and retries all three fetches on retry click", async () => {
