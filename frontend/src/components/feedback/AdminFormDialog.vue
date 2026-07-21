@@ -29,6 +29,7 @@ const emit = defineEmits<{ save: []; cancel: [] }>();
       <div class="mt-5 flex gap-3">
         <button
           type="button"
+          data-test="dialog-cancel"
           class="flex-1 rounded-full border border-bz-border py-2.5 text-sm font-medium text-bz-ink-700"
           @click="emit('cancel')"
         >
@@ -36,6 +37,7 @@ const emit = defineEmits<{ save: []; cancel: [] }>();
         </button>
         <button
           type="button"
+          data-test="dialog-save"
           class="flex-1 rounded-full bg-bz-gold-600 py-2.5 text-sm font-medium text-white disabled:opacity-60"
           :disabled="saving"
           @click="emit('save')"

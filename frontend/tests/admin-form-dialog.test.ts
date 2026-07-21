@@ -13,10 +13,10 @@ describe("AdminFormDialog", () => {
     expect(wrapper.text()).toContain("Edit Thing");
     expect(wrapper.find("[data-test='field']").exists()).toBe(true);
 
-    await wrapper.find("button:last-of-type").trigger("click");
+    await wrapper.find('[data-test="dialog-save"]').trigger("click");
     expect(wrapper.emitted("save")).toHaveLength(1);
 
-    await wrapper.find("button:first-of-type").trigger("click");
+    await wrapper.find('[data-test="dialog-cancel"]').trigger("click");
     expect(wrapper.emitted("cancel")).toHaveLength(1);
   });
 
@@ -27,7 +27,7 @@ describe("AdminFormDialog", () => {
 
     expect(wrapper.text()).toContain("Something broke");
     expect(wrapper.text()).toContain("Saving...");
-    expect(wrapper.find("button:last-of-type").attributes("disabled")).toBeDefined();
+    expect(wrapper.find('[data-test="dialog-save"]').attributes("disabled")).toBeDefined();
   });
 
   it("renders nothing when closed", () => {
