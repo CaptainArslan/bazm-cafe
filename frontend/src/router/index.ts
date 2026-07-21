@@ -146,8 +146,7 @@ const router = createRouter({
         {
           path: "cancellations",
           name: "admin.cancellations",
-          component: () => import("../views/admin/ComingSoonView.vue"),
-          props: () => ({ title: "Cancellations" }),
+          component: () => import("../views/admin/CancellationsView.vue"),
           meta: { role: "ADMIN" },
         },
         {
