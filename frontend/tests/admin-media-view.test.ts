@@ -28,7 +28,7 @@ describe("admin MediaView", () => {
     expect(listSpy).toHaveBeenLastCalledWith("products");
   });
 
-  it("deletes a media item", async () => {
+  it("opens a confirmation dialog before deleting a media item, and only deletes on confirm", async () => {
     vi.spyOn(mediaApi, "listMedia").mockResolvedValue({
       media: [{ path: "/uploads/media/general/a.png", url: "http://x/a.png", folder: "general", mimeType: "image/png", sizeBytes: 100, originalName: "a.png" }],
     });
@@ -38,6 +38,10 @@ describe("admin MediaView", () => {
     await flushPromises();
 
     await wrapper.get('[data-test="delete-media"]').trigger("click");
+    expect(deleteSpy).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("a.png");
+
+    await wrapper.get('[data-test="confirm"]').trigger("click");
     await flushPromises();
 
     expect(deleteSpy).toHaveBeenCalledWith("/uploads/media/general/a.png");

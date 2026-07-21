@@ -120,6 +120,8 @@ async function saveForm(): Promise<void> {
 
 // --- Operational status toggle ---
 
+const actionError = ref<string | null>(null);
+
 async function toggleOperationalStatus(table: SafeTable): Promise<void> {
   try {
     const result = await updateTableStatus(table.id, {
@@ -127,8 +129,12 @@ async function toggleOperationalStatus(table: SafeTable): Promise<void> {
     });
     replaceTable(result.table);
   } catch (caught) {
-    error.value = toUserSafeErrorMessage(caught);
+    actionError.value = toUserSafeErrorMessage(caught);
   }
+}
+
+function dismissActionError(): void {
+  actionError.value = null;
 }
 
 // --- QR code panel ---
@@ -227,6 +233,11 @@ async function confirmForceRelease(reason: string): Promise<void> {
     <p v-if="releaseNotice" class="mt-3 rounded-xl bg-bz-green-tint px-3 py-2 text-sm text-bz-green">
       {{ releaseNotice }}
     </p>
+
+    <div v-if="actionError" class="mt-3 flex items-start justify-between gap-3 rounded-xl bg-bz-red-tint px-3 py-2 text-sm text-bz-red">
+      <span>{{ actionError }}</span>
+      <button type="button" data-test="dismiss-action-error" class="font-medium" @click="dismissActionError">Dismiss</button>
+    </div>
 
     <LoadingState v-if="loading && tableList.length === 0" label="Loading tables..." />
 

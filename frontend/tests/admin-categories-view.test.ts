@@ -76,8 +76,26 @@ describe("admin CategoriesView", () => {
     await flushPromises();
 
     await wrapper.get('[data-test="delete-cat1"]').trigger("click");
+    await wrapper.get('[data-test="confirm"]').trigger("click");
     await flushPromises();
 
     expect(wrapper.text()).toContain("This category still has products.");
+  });
+
+  it("opens a confirmation dialog before deleting a category, and only deletes on confirm", async () => {
+    vi.spyOn(categoriesApi, "listCategories").mockResolvedValue({ categories: [makeCategory()] });
+    const deleteSpy = vi.spyOn(categoriesApi, "deleteCategory").mockResolvedValue(undefined as never);
+
+    const wrapper = mount(CategoriesView);
+    await flushPromises();
+
+    await wrapper.get('[data-test="delete-cat1"]').trigger("click");
+    expect(deleteSpy).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Drinks");
+
+    await wrapper.get('[data-test="confirm"]').trigger("click");
+    await flushPromises();
+
+    expect(deleteSpy).toHaveBeenCalledWith("cat1");
   });
 });

@@ -75,4 +75,22 @@ describe("admin ProductsView", () => {
 
     expect(statusSpy).toHaveBeenCalledWith("p1", false);
   });
+
+  it("opens a confirmation dialog before deleting a product, and only deletes on confirm", async () => {
+    vi.spyOn(categoriesApi, "listCategories").mockResolvedValue({ categories: [makeCategory()] });
+    vi.spyOn(productsApi, "listAdminProducts").mockResolvedValue({ products: [makeProduct()] });
+    const deleteSpy = vi.spyOn(productsApi, "deleteProduct").mockResolvedValue(undefined as never);
+
+    const wrapper = mount(ProductsView);
+    await flushPromises();
+
+    await wrapper.get('[data-test="delete-p1"]').trigger("click");
+    expect(deleteSpy).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Espresso");
+
+    await wrapper.get('[data-test="confirm"]').trigger("click");
+    await flushPromises();
+
+    expect(deleteSpy).toHaveBeenCalledWith("p1");
+  });
 });

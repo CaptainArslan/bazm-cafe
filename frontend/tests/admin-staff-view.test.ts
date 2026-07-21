@@ -3,6 +3,7 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "../src/api/http";
 import * as adminStaffApi from "../src/api/admin-staff";
 import StaffView from "../src/views/admin/StaffView.vue";
 import type { SafeStaff } from "../src/types/staff";
@@ -69,5 +70,27 @@ describe("admin StaffView", () => {
     await flushPromises();
 
     expect(statusSpy).toHaveBeenCalledWith("s1", false);
+  });
+
+  it("keeps the staff list visible and shows a dismissable banner when toggling status fails", async () => {
+    vi.spyOn(adminStaffApi, "listStaff").mockResolvedValue({ staff: [makeStaff({ isActive: true })] });
+    vi.spyOn(adminStaffApi, "updateStaffStatus").mockRejectedValue(
+      new ApiError(409, "Could not update staff status.", { code: "STAFF_STATUS_CONFLICT" }),
+    );
+
+    const wrapper = mount(StaffView);
+    await flushPromises();
+
+    await wrapper.get('[data-test="toggle-active-s1"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Ada Staff");
+    expect(wrapper.text()).toContain("Could not update staff status.");
+
+    await wrapper.get('[data-test="dismiss-action-error"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("Could not update staff status.");
+    expect(wrapper.text()).toContain("Ada Staff");
   });
 });

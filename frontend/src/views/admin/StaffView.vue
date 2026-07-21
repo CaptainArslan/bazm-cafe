@@ -107,14 +107,20 @@ async function saveForm(): Promise<void> {
 
 // --- Active / inactive toggle ---
 
+const actionError = ref<string | null>(null);
+
 async function toggleActive(member: SafeStaff): Promise<void> {
   try {
     const result = await updateStaffStatus(member.id, !member.isActive);
     const index = staffList.value.findIndex((entry) => entry.id === member.id);
     if (index !== -1) staffList.value[index] = result.staff;
   } catch (caught) {
-    error.value = toUserSafeErrorMessage(caught);
+    actionError.value = toUserSafeErrorMessage(caught);
   }
+}
+
+function dismissActionError(): void {
+  actionError.value = null;
 }
 
 // --- Password reset dialog ---
@@ -173,6 +179,11 @@ async function savePassword(): Promise<void> {
       class="mt-4 w-full rounded-xl border border-bz-border px-3 py-2 text-sm outline-none focus:border-bz-gold-500"
       @input="onSearchInput"
     />
+
+    <div v-if="actionError" class="mt-3 flex items-start justify-between gap-3 rounded-xl bg-bz-red-tint px-3 py-2 text-sm text-bz-red">
+      <span>{{ actionError }}</span>
+      <button type="button" data-test="dismiss-action-error" class="font-medium" @click="dismissActionError">Dismiss</button>
+    </div>
 
     <LoadingState v-if="loading && staffList.length === 0" label="Loading staff..." />
 

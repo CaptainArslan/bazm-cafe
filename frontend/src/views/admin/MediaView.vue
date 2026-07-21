@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 
+import ActionConfirmationDialog from "../../components/feedback/ActionConfirmationDialog.vue";
 import EmptyState from "../../components/feedback/EmptyState.vue";
 import ErrorState from "../../components/feedback/ErrorState.vue";
 import LoadingState from "../../components/feedback/LoadingState.vue";
@@ -15,6 +16,8 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 const mediaList = ref<SafeMedia[]>([]);
 const actionError = ref<string | null>(null);
+const deleteTarget = ref<SafeMedia | null>(null);
+const deleteSaving = ref(false);
 
 async function load(): Promise<void> {
   loading.value = true;
@@ -35,13 +38,29 @@ function selectFolder(folder: MediaFolder): void {
   void load();
 }
 
-async function remove(media: SafeMedia): Promise<void> {
+function openDeleteDialog(media: SafeMedia): void {
+  actionError.value = null;
+  deleteTarget.value = media;
+}
+
+function closeDeleteDialog(): void {
+  deleteTarget.value = null;
+}
+
+async function confirmDelete(): Promise<void> {
+  if (!deleteTarget.value) return;
+  const media = deleteTarget.value;
+  deleteSaving.value = true;
   actionError.value = null;
   try {
     await deleteMedia(media.path);
+    closeDeleteDialog();
     await load();
   } catch (caught) {
     actionError.value = toUserSafeErrorMessage(caught);
+    closeDeleteDialog();
+  } finally {
+    deleteSaving.value = false;
   }
 }
 
@@ -100,11 +119,22 @@ onMounted(load);
           type="button"
           data-test="delete-media"
           class="mt-2 w-full rounded-full border border-bz-red px-3 py-1.5 text-xs font-medium text-bz-red"
-          @click="remove(item)"
+          @click="openDeleteDialog(item)"
         >
           Delete
         </button>
       </div>
     </div>
+
+    <ActionConfirmationDialog
+      :open="deleteTarget !== null"
+      title="Delete Media"
+      :description="`Delete &quot;${deleteTarget?.originalName}&quot;? This cannot be undone.`"
+      confirm-label="Delete"
+      destructive
+      :confirming="deleteSaving"
+      @confirm="confirmDelete"
+      @cancel="closeDeleteDialog"
+    />
   </main>
 </template>

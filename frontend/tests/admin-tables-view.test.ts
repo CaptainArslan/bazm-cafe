@@ -2,6 +2,7 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "../src/api/http";
 import * as tablesApi from "../src/api/admin-tables";
 import TablesView from "../src/views/admin/TablesView.vue";
 import type { SafeTable } from "../src/types/table";
@@ -88,5 +89,28 @@ describe("admin TablesView", () => {
     await flushPromises();
 
     expect(forceSpy).toHaveBeenCalledWith("t1", "Guest left without paying");
+  });
+
+  it("keeps the table list visible and shows a dismissable banner when toggling status fails", async () => {
+    vi.spyOn(tablesApi, "listTables").mockResolvedValue({ tables: [makeTable({ operationalStatus: "AVAILABLE" })] });
+    vi.spyOn(tablesApi, "updateTableStatus").mockRejectedValue(
+      new ApiError(409, "Could not update table status.", { code: "TABLE_STATUS_CONFLICT" }),
+    );
+
+    const wrapper = mount(TablesView);
+    await flushPromises();
+
+    const toggleButton = wrapper.findAll("button").find((b) => b.text() === "Take Out of Service");
+    await toggleButton!.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("A1");
+    expect(wrapper.text()).toContain("Could not update table status.");
+
+    await wrapper.get('[data-test="dismiss-action-error"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("Could not update table status.");
+    expect(wrapper.text()).toContain("A1");
   });
 });

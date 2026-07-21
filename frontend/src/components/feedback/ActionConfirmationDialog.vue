@@ -27,6 +27,7 @@ const emit = defineEmits<{ confirm: []; cancel: [] }>();
       <div class="mt-5 flex gap-3">
         <button
           type="button"
+          data-test="cancel"
           class="flex-1 rounded-full border border-bz-border py-2.5 text-sm font-medium text-bz-ink-700"
           @click="emit('cancel')"
         >
@@ -34,6 +35,7 @@ const emit = defineEmits<{ confirm: []; cancel: [] }>();
         </button>
         <button
           type="button"
+          data-test="confirm"
           class="flex-1 rounded-full py-2.5 text-sm font-medium text-white disabled:opacity-60"
           :class="destructive ? 'bg-bz-red' : 'bg-bz-gold-600'"
           :disabled="confirming"

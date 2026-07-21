@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
 
+import ActionConfirmationDialog from "../../components/feedback/ActionConfirmationDialog.vue";
 import AdminFormDialog from "../../components/feedback/AdminFormDialog.vue";
 import EmptyState from "../../components/feedback/EmptyState.vue";
 import ErrorState from "../../components/feedback/ErrorState.vue";
@@ -134,14 +135,32 @@ async function toggleAvailable(product: SafeProduct): Promise<void> {
 // --- Delete ---
 
 const actionError = ref<string | null>(null);
+const deleteTarget = ref<SafeProduct | null>(null);
+const deleteSaving = ref(false);
 
-async function remove(product: SafeProduct): Promise<void> {
+function openDeleteDialog(product: SafeProduct): void {
+  actionError.value = null;
+  deleteTarget.value = product;
+}
+
+function closeDeleteDialog(): void {
+  deleteTarget.value = null;
+}
+
+async function confirmDelete(): Promise<void> {
+  if (!deleteTarget.value) return;
+  const product = deleteTarget.value;
+  deleteSaving.value = true;
   actionError.value = null;
   try {
     await deleteProduct(product.id);
     productList.value = productList.value.filter((entry) => entry.id !== product.id);
+    closeDeleteDialog();
   } catch (caught) {
     actionError.value = toUserSafeErrorMessage(caught);
+    closeDeleteDialog();
+  } finally {
+    deleteSaving.value = false;
   }
 }
 
@@ -216,13 +235,24 @@ function dismissActionError(): void {
             type="button"
             :data-test="`delete-${product.id}`"
             class="rounded-full border border-bz-red px-3 py-1.5 text-sm font-medium text-bz-red"
-            @click="remove(product)"
+            @click="openDeleteDialog(product)"
           >
             Delete
           </button>
         </div>
       </div>
     </div>
+
+    <ActionConfirmationDialog
+      :open="deleteTarget !== null"
+      title="Delete Product"
+      :description="`Delete &quot;${deleteTarget?.name}&quot;? This cannot be undone.`"
+      confirm-label="Delete"
+      destructive
+      :confirming="deleteSaving"
+      @confirm="confirmDelete"
+      @cancel="closeDeleteDialog"
+    />
 
     <AdminFormDialog
       :open="formDialogOpen"
