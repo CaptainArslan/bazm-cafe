@@ -70,4 +70,23 @@ describe("router role guards", () => {
     await router.isReady();
     expect(router.currentRoute.value.name).toBe("admin.home");
   });
+
+  it("redirects an unauthenticated visitor away from /admin/staff to admin.login", async () => {
+    const router = (await import("../src/router")).default;
+    await router.push("/admin/staff");
+    await router.isReady();
+    expect(router.currentRoute.value.name).toBe("admin.login");
+  });
+
+  it("lets an authenticated ADMIN user reach a placeholder admin module route", async () => {
+    const authStore = useAuthStore();
+    // Test seam: see above.
+    authStore.user = { id: "2", name: "Ali", email: "ali@bazm.test", role: "ADMIN" };
+    authStore.status = "ready";
+
+    const router = (await import("../src/router")).default;
+    await router.push("/admin/staff");
+    await router.isReady();
+    expect(router.currentRoute.value.name).toBe("admin.staff");
+  });
 });
