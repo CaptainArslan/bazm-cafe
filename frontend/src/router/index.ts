@@ -167,8 +167,7 @@ const router = createRouter({
         {
           path: "products",
           name: "admin.products",
-          component: () => import("../views/admin/ComingSoonView.vue"),
-          props: () => ({ title: "Products" }),
+          component: () => import("../views/admin/ProductsView.vue"),
           meta: { role: "ADMIN" },
         },
         {
