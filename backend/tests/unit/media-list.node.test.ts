@@ -27,4 +27,20 @@ describe("listMediaInFolder", () => {
     assert.equal(found?.mimeType, "image/png");
     assert.equal(found?.path, `/uploads/media/general/${testFileName}`);
   });
+
+  it("propagates non-ENOENT errors instead of returning an empty array", async (t) => {
+    // Create a file where the "products" folder directory is expected, so
+    // readdir() fails with ENOTDIR rather than ENOENT.
+    const productsDir = path.join(MEDIA_UPLOADS_DIR, "products");
+    await fs.promises.rm(productsDir, { recursive: true, force: true });
+    await fs.promises.mkdir(MEDIA_UPLOADS_DIR, { recursive: true });
+    await fs.promises.writeFile(productsDir, "not-a-directory");
+
+    t.after(async () => {
+      await fs.promises.rm(productsDir, { force: true }).catch(() => {});
+      await fs.promises.mkdir(productsDir, { recursive: true }).catch(() => {});
+    });
+
+    await assert.rejects(() => listMediaInFolder("products"));
+  });
 });

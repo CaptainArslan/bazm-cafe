@@ -92,8 +92,12 @@ export async function listMediaInFolder(folder: MediaFolder): Promise<SafeMedia[
 
   try {
     entries = await readdir(folderDir, { withFileTypes: false });
-  } catch {
-    return [];
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return [];
+    }
+
+    throw error;
   }
 
   const media: SafeMedia[] = [];
