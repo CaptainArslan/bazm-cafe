@@ -4,7 +4,7 @@
   "description": "Local-first BAZM Cafe restaurant backend",
   "main": "dist/server.js",
   "scripts": {
-    "test": "tsx --test tests/unit/utils.node.test.ts tests/unit/order-safe-mapping.node.test.ts tests/unit/guest-session-cookie.node.test.ts tests/smoke/api.smoke.node.test.ts tests/workflows/finalized.workflows.node.test.ts",
+    "test": "tsx --test tests/unit/utils.node.test.ts tests/unit/order-safe-mapping.node.test.ts tests/unit/guest-session-cookie.node.test.ts tests/unit/media-list.node.test.ts tests/smoke/api.smoke.node.test.ts tests/workflows/finalized.workflows.node.test.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
@@ -12,7 +12,7 @@
     "db:seed": "prisma db seed",
     "test:watch": "vitest",
     "postman:table": "tsx scripts/create-postman-table.ts",
-    "test:unit": "tsx --test tests/unit/utils.node.test.ts tests/unit/order-safe-mapping.node.test.ts tests/unit/guest-session-cookie.node.test.ts",
+    "test:unit": "tsx --test tests/unit/utils.node.test.ts tests/unit/order-safe-mapping.node.test.ts tests/unit/guest-session-cookie.node.test.ts tests/unit/media-list.node.test.ts",
     "test:smoke": "tsx --test tests/smoke/api.smoke.node.test.ts",
     "test:workflows": "tsx --test tests/workflows/finalized.workflows.node.test.ts"
   },

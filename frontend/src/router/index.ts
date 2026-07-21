@@ -179,8 +179,7 @@ const router = createRouter({
         {
           path: "media",
           name: "admin.media",
-          component: () => import("../views/admin/ComingSoonView.vue"),
-          props: () => ({ title: "Media" }),
+          component: () => import("../views/admin/MediaView.vue"),
           meta: { role: "ADMIN" },
         },
         {

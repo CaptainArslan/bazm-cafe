@@ -6,9 +6,14 @@ import { AppError } from "../../errors/app-error.js";
 import { sendSuccess } from "../../utils/api-response.js";
 import { MEDIA_MESSAGES, type MediaFolder } from "./media.constants.js";
 import { createMediaUploader } from "./media.upload.js";
-import { deleteMediaByPath, storeUploadedMedia } from "./media.service.js";
+import {
+  deleteMediaByPath,
+  listMediaInFolder,
+  storeUploadedMedia,
+} from "./media.service.js";
 import type {
   DeleteMediaInput,
+  ListMediaQuery,
   UploadMediaQuery,
 } from "./media.validation.js";
 
@@ -82,6 +87,16 @@ export async function upload(request: Request, response: Response) {
   return sendSuccess(response, {
     statusCode: HTTP_STATUS.CREATED,
     message: "Image uploaded successfully.",
+    data: { media },
+  });
+}
+
+export async function list(request: Request, response: Response) {
+  const query = request.query as unknown as ListMediaQuery;
+  const media = await listMediaInFolder(query.folder ?? "general");
+
+  return sendSuccess(response, {
+    message: "Media fetched successfully.",
     data: { media },
   });
 }
