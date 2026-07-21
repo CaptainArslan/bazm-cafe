@@ -5,7 +5,7 @@ import { computed, ref } from "vue";
 import ReasonConfirmationDialog from "../../components/feedback/ReasonConfirmationDialog.vue";
 import OrderStatusTimeline from "../../components/domain/OrderStatusTimeline.vue";
 import { useStaffOrdersStore } from "../../stores/staff-orders.store";
-import { OrderStatus } from "../../types/enums";
+import { CustomerType, OrderStatus } from "../../types/enums";
 import type { SafeOrder } from "../../types/order";
 import { toUserSafeErrorMessage } from "../../utils/error-message";
 
@@ -21,6 +21,17 @@ const rejecting = ref(false);
 const cancelling = ref(false);
 
 const canCancel = computed(() => CANCELLABLE_STATUSES.includes(props.order.orderStatus));
+
+// Mirrors the backend rule enforced in order.service.ts: a DINE_IN order must have an
+// attached customer before it can be marked SERVED. The staff-facing OrderDetailView has
+// the same gate; kept as a small local duplication rather than a shared helper for two
+// call sites.
+const canMarkServed = computed(() => {
+  const hasCustomer =
+    props.order.customerId !== null ||
+    (props.order.customerName !== null && props.order.customerName.length > 0);
+  return props.order.orderType !== CustomerType.DINE_IN || hasCustomer;
+});
 
 async function runAction(action: () => Promise<void>): Promise<void> {
   actionError.value = null;
@@ -128,15 +139,20 @@ async function onConfirmCancel(reason: string): Promise<void> {
       >
         Mark Ready
       </button>
-      <button
-        v-else-if="order.orderStatus === OrderStatus.READY"
-        type="button"
-        data-test="mark-served"
-        class="flex-1 rounded-full bg-bz-gold-600 py-2.5 text-sm font-medium text-white"
-        @click="onMarkServed"
-      >
-        Mark Served
-      </button>
+      <div v-else-if="order.orderStatus === OrderStatus.READY" class="flex-1">
+        <button
+          type="button"
+          data-test="mark-served"
+          class="w-full rounded-full bg-bz-gold-600 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          :disabled="!canMarkServed"
+          @click="onMarkServed"
+        >
+          Mark Served
+        </button>
+        <p v-if="!canMarkServed" class="mt-2 text-xs text-bz-red">
+          Attach a customer before marking this order served.
+        </p>
+      </div>
 
       <button
         v-if="canCancel"

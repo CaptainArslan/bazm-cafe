@@ -59,4 +59,16 @@ describe("admin OrdersView", () => {
     await wrapper.get('[data-test="open-order-o1"]').trigger("click");
     expect(wrapper.find('[data-test="cancel-order"]').exists()).toBe(false);
   });
+
+  it("disables Mark Served for a DINE_IN READY order with no attached customer", async () => {
+    vi.spyOn(staffOrdersApi, "listStaffOrders").mockResolvedValue({ orders: [makeOrder("o1", OrderStatus.READY) as never] });
+    const wrapper = mount(OrdersView);
+    await flushPromises();
+
+    await wrapper.get('[data-test="open-order-o1"]').trigger("click");
+
+    const button = wrapper.get('[data-test="mark-served"]');
+    expect((button.element as HTMLButtonElement).disabled).toBe(true);
+    expect(wrapper.text()).toContain("Attach a customer before marking this order served.");
+  });
 });
