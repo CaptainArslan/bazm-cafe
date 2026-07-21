@@ -26,13 +26,15 @@ export function updateTableStatus(
 
 export function getTableQrCode(tableId: string) {
   return authHttp.get<{
-    tableId: string;
-    tableNumber: string;
-    qrVersion: number;
-    qrImagePath: string | null;
-    qrImageUrl: string | null;
-    qrGeneratedAt: string;
-    qrRegeneratedAt: string | null;
+    qrCode: {
+      tableId: string;
+      tableNumber: string;
+      qrVersion: number;
+      qrImagePath: string | null;
+      qrImageUrl: string | null;
+      qrGeneratedAt: string;
+      qrRegeneratedAt: string | null;
+    };
   }>(`/tables/${tableId}/qr-code`);
 }
 
