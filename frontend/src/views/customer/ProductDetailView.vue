@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import EmptyState from "../../components/feedback/EmptyState.vue";
+import LoadingState from "../../components/feedback/LoadingState.vue";
 import { useCartStore } from "../../stores/cart.store";
 import { useMenuStore } from "../../stores/menu.store";
 
@@ -36,7 +37,9 @@ function addToCart() {
 </script>
 
 <template>
-  <main v-if="product" class="flex min-h-dvh flex-col pb-28">
+  <LoadingState v-if="menuStore.loading && !menuStore.loaded" label="Loading item..." />
+
+  <main v-else-if="product" class="flex min-h-dvh flex-col pb-28">
     <div class="aspect-video w-full overflow-hidden bg-bz-cream">
       <img
         v-if="product.imagePath"
