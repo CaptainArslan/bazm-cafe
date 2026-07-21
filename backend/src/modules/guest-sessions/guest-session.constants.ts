@@ -5,7 +5,11 @@ import { RECEIPT_ACCESS_TTL_HOURS } from "./session-lifecycle.js";
 
 export const GUEST_SESSION_CONSTANTS = {
   COOKIE_NAME: "bazm_guest_session",
-  COOKIE_PATH: "/api/v1",
+  // Must be "/" (not scoped to "/api/v1"): Socket.IO's handshake lives at
+  // "/socket.io", outside "/api/v1", and browsers never send a cookie to a path
+  // it isn't scoped under. A narrower path silently prevents a guest's socket
+  // from ever joining its session room, so no real-time order updates arrive.
+  COOKIE_PATH: "/",
   RECEIPT_COOKIE_NAME: "bazm_receipt_access",
 } as const;
 
