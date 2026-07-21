@@ -103,6 +103,18 @@ describe("staff orders store", () => {
     expect(store.orders[0].orderStatus).toBe(OrderStatus.REJECTED);
   });
 
+  it("cancel sends the reason and updates the order", async () => {
+    const cancelSpy = vi
+      .spyOn(staffOrdersApi, "cancelOrder")
+      .mockResolvedValue({ order: makeOrder({ orderStatus: OrderStatus.CANCELLED, cancellationReason: "Table double-booked" }) });
+    const store = useStaffOrdersStore();
+
+    await store.cancel("o1", "Table double-booked");
+
+    expect(cancelSpy).toHaveBeenCalledWith("o1", "Table double-booked");
+    expect(store.orders[0].orderStatus).toBe(OrderStatus.CANCELLED);
+  });
+
   it("attachCustomer updates the order with the returned customer info", async () => {
     vi.spyOn(staffOrdersApi, "attachCustomerToOrder").mockResolvedValue({
       order: makeOrder({ customerId: "c1", customerName: "Ali" }),

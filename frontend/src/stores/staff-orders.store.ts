@@ -4,6 +4,7 @@ import { ref } from "vue";
 import {
   acceptOrder,
   attachCustomerToOrder,
+  cancelOrder,
   getStaffOrder,
   listStaffOrders,
   markOrderReady,
@@ -82,6 +83,11 @@ export const useStaffOrdersStore = defineStore("staffOrders", () => {
     upsert(result.order);
   }
 
+  async function cancel(orderId: string, reason: string): Promise<void> {
+    const result = await cancelOrder(orderId, reason);
+    upsert(result.order);
+  }
+
   async function attachCustomer(orderId: string, input: AttachCustomerInput): Promise<void> {
     const result = await attachCustomerToOrder(orderId, input);
     upsert(result.order);
@@ -104,6 +110,7 @@ export const useStaffOrdersStore = defineStore("staffOrders", () => {
     markReady,
     markServed,
     reject,
+    cancel,
     attachCustomer,
     findOrder,
   };

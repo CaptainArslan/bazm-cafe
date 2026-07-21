@@ -4,6 +4,7 @@ import { configureAuthIntegration } from "../src/api/http";
 import {
   acceptOrder,
   attachCustomerToOrder,
+  cancelOrder,
   getStaffOrder,
   getStaffReceiptUrl,
   listStaffOrders,
@@ -75,6 +76,14 @@ describe("staff orders api", () => {
     const [url, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(url).toContain("/orders/o1/reject");
     expect(JSON.parse(init.body)).toEqual({ reason: "Kitchen is out of this item." });
+  });
+
+  it("cancelOrder posts the reason to the cancel endpoint", async () => {
+    mockFetchOnce({ success: true, message: "ok", data: { order: { id: "o1" } } });
+    await cancelOrder("o1", "Table double-booked");
+    const [url, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(url).toContain("/orders/o1/cancel");
+    expect(JSON.parse(init.body)).toEqual({ reason: "Table double-booked" });
   });
 
   it("attachCustomerToOrder posts a customerId payload", async () => {
