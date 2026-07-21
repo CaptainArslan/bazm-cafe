@@ -56,3 +56,30 @@ describe("toSafeOrder guestSessionId mapping", () => {
     assert.equal(safe.guestSessionId, null);
   });
 });
+
+describe("toSafeOrder remainingAmount", () => {
+  it("is the unpaid balance for a non-terminal order", () => {
+    const safe = toSafeOrder(baseOrder({ status: OrderStatus.SERVED }));
+    assert.equal(safe.remainingAmount, "100.00");
+  });
+
+  it("is zero for a REJECTED order even though it was never paid", () => {
+    const safe = toSafeOrder(baseOrder({ status: OrderStatus.REJECTED }));
+    assert.equal(safe.remainingAmount, "0.00");
+  });
+
+  it("is zero for a CANCELLED order even though it was never paid", () => {
+    const safe = toSafeOrder(baseOrder({ status: OrderStatus.CANCELLED }));
+    assert.equal(safe.remainingAmount, "0.00");
+  });
+
+  it("is zero for a COMPLETED order that was paid in full", () => {
+    const safe = toSafeOrder(
+      baseOrder({
+        status: OrderStatus.COMPLETED,
+        payments: [{ amount: new Prisma.Decimal("100.00"), status: PaymentStatus.COMPLETED, voidedAt: null }],
+      }),
+    );
+    assert.equal(safe.remainingAmount, "0.00");
+  });
+});

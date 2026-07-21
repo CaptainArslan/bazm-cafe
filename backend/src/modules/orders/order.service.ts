@@ -28,6 +28,7 @@ import {
 import type { GuestSessionContext } from "../guest-sessions/guest-session.types.js";
 import {
   formatOutstanding,
+  orderOutstanding,
   paidAmountFromPayments,
   type SessionOrderSnapshot,
 } from "../guest-sessions/session-lifecycle.js";
@@ -110,7 +111,7 @@ export function toSafeOrder(order: {
   }>;
 }): SafeOrder {
   const paidAmount = paidAmountFromPayments(order.payments);
-  const remainingAmount = order.totalAmount.minus(paidAmount);
+  const remainingAmount = orderOutstanding(order);
   const estimatedPreparationMinutes = maxEstimatedMinutes(order.items);
 
   return {
