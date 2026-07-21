@@ -69,29 +69,40 @@ function imageSrc(imagePath: string | null): string | null {
         <RouterLink
           v-for="product in visibleProducts"
           :key="product.id"
+          v-slot="{ navigate }"
           :to="{ name: 'customer.product-detail', params: { productId: product.id } }"
-          class="rounded-2xl border border-bz-border bg-white p-3 shadow-bz-sm"
+          custom
         >
-          <div class="aspect-square overflow-hidden rounded-xl bg-bz-cream">
-            <img
-              v-if="imageSrc(product.imagePath)"
-              :src="imageSrc(product.imagePath)!"
-              :alt="product.name"
-              class="h-full w-full object-cover"
-            />
-          </div>
-          <p class="mt-2 line-clamp-1 text-sm font-medium text-bz-ink-900">
-            {{ product.name }}
-          </p>
-          <div class="mt-1 flex items-center justify-between">
-            <span class="text-sm font-semibold text-bz-gold-700">Rs. {{ product.price }}</span>
-            <button
-              type="button"
-              class="rounded-full bg-bz-gold-600 px-2.5 py-1 text-xs font-medium text-white"
-              @click.stop.prevent="cartStore.addItem(product)"
-            >
-              Add
-            </button>
+          <!-- A `<button>` (the Add action below) can't legally nest inside an `<a>`, so this
+          card is a div driven by RouterLink's `navigate` rather than the RouterLink itself. -->
+          <div
+            role="link"
+            tabindex="0"
+            class="rounded-2xl border border-bz-border bg-white p-3 shadow-bz-sm"
+            @click="navigate"
+            @keydown.enter="() => navigate()"
+          >
+            <div class="aspect-square overflow-hidden rounded-xl bg-bz-cream">
+              <img
+                v-if="imageSrc(product.imagePath)"
+                :src="imageSrc(product.imagePath)!"
+                :alt="product.name"
+                class="h-full w-full object-cover"
+              />
+            </div>
+            <p class="mt-2 line-clamp-1 text-sm font-medium text-bz-ink-900">
+              {{ product.name }}
+            </p>
+            <div class="mt-1 flex items-center justify-between">
+              <span class="text-sm font-semibold text-bz-gold-700">Rs. {{ product.price }}</span>
+              <button
+                type="button"
+                class="rounded-full bg-bz-gold-600 px-2.5 py-1 text-xs font-medium text-white"
+                @click.stop="cartStore.addItem(product)"
+              >
+                Add
+              </button>
+            </div>
           </div>
         </RouterLink>
       </div>
