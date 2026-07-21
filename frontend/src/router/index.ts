@@ -201,8 +201,7 @@ const router = createRouter({
         {
           path: "tables",
           name: "admin.tables",
-          component: () => import("../views/admin/ComingSoonView.vue"),
-          props: () => ({ title: "Tables & QR" }),
+          component: () => import("../views/admin/TablesView.vue"),
           meta: { role: "ADMIN" },
         },
         {
