@@ -134,7 +134,7 @@ const router = createRouter({
         {
           path: "",
           name: "admin.home",
-          component: () => import("../views/admin/HomePlaceholder.vue"),
+          component: () => import("../views/admin/DashboardView.vue"),
           meta: { role: "ADMIN" },
         },
         {
