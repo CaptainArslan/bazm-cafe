@@ -152,8 +152,7 @@ const router = createRouter({
         {
           path: "payments",
           name: "admin.payments",
-          component: () => import("../views/admin/ComingSoonView.vue"),
-          props: () => ({ title: "Payments" }),
+          component: () => import("../views/admin/PaymentsView.vue"),
           meta: { role: "ADMIN" },
         },
         {
