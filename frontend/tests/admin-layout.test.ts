@@ -8,7 +8,7 @@ import router from "../src/router";
 
 // Polls with real timers until the given predicate over the router's current route is satisfied.
 // router.isReady() only resolves for the *initial* navigation, so it can't be used to await a
-// router.replace() triggered from onSuccess: that subsequent navigation runs an async route guard
+// router.replace() triggered from onLogout: that subsequent navigation runs an async route guard
 // and a dynamic import() of the destination view component, which needs real event-loop turns (not
 // just a microtask flush) to settle.
 async function waitForRoute(predicate: () => boolean): Promise<void> {
@@ -97,5 +97,21 @@ describe("AdminLayout", () => {
 
     expect(authStore.logout).toHaveBeenCalledOnce();
     expect(router.currentRoute.value.name).toBe("admin.login");
+  });
+
+  it("does not render nav shell chrome when unauthenticated", async () => {
+    // Do NOT sign in; keep authStore.isAuthenticated = false
+    await router.push("/admin/login");
+    await router.isReady();
+    const wrapper = mount(AdminLayout, { global: { plugins: [router] } });
+
+    // Verify no nav shell elements are present
+    expect(wrapper.find('[data-test="nav-sidebar"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="nav-drawer-toggle"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="sign-out"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="nav-drawer-backdrop"]').exists()).toBe(false);
+
+    // Verify RouterView is rendered (LoginView will be rendered into it)
+    expect(wrapper.findComponent({ name: "RouterView" }).exists()).toBe(true);
   });
 });

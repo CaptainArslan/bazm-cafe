@@ -59,7 +59,7 @@ async function onLogout(): Promise<void> {
 </script>
 
 <template>
-  <div class="min-h-dvh bg-bz-bg font-sans text-bz-ink-900 md:flex">
+  <div v-if="authStore.isAuthenticated" class="min-h-dvh bg-bz-bg font-sans text-bz-ink-900 md:flex">
     <div class="flex items-center justify-between border-b border-bz-border bg-white px-4 py-2 md:hidden">
       <span class="text-xs font-semibold uppercase tracking-wide text-bz-ink-500">BAZM Admin</span>
       <button
@@ -125,4 +125,5 @@ async function onLogout(): Promise<void> {
       <RouterView />
     </main>
   </div>
+  <RouterView v-else />
 </template>
