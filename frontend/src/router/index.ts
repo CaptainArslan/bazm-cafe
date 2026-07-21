@@ -161,8 +161,7 @@ const router = createRouter({
         {
           path: "categories",
           name: "admin.categories",
-          component: () => import("../views/admin/ComingSoonView.vue"),
-          props: () => ({ title: "Categories" }),
+          component: () => import("../views/admin/CategoriesView.vue"),
           meta: { role: "ADMIN" },
         },
         {
