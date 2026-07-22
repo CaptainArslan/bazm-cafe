@@ -91,7 +91,7 @@ function closeFormDialog(): void {
 
 function buildFormInput(): CreateProductInput & UpdateProductInput {
   const description = form.description.trim();
-  const preparationMinutes = form.preparationMinutes.trim();
+  const preparationMinutes = String(form.preparationMinutes).trim();
   return {
     categoryId: form.categoryId,
     name: form.name.trim(),

@@ -80,7 +80,7 @@ function closeFormDialog(): void {
 
 function buildFormInput(): CreateCategoryInput & UpdateCategoryInput {
   const description = form.description.trim();
-  const displayOrder = form.displayOrder.trim();
+  const displayOrder = String(form.displayOrder).trim();
   return {
     name: form.name.trim(),
     ...(description ? { description } : {}),

@@ -58,6 +58,26 @@ describe("admin TablesView", () => {
     expect(createSpy).toHaveBeenCalledWith({ tableNumber: "A1" });
   });
 
+  it("creates a new table with a capacity value without throwing", async () => {
+    vi.spyOn(tablesApi, "listTables").mockResolvedValue({ tables: [] });
+    const createSpy = vi.spyOn(tablesApi, "createTable").mockResolvedValue({ table: makeTable({ capacity: 6 }) });
+
+    const wrapper = mount(TablesView);
+    await flushPromises();
+
+    await wrapper.get('[data-test="new-table"]').trigger("click");
+    await wrapper.get('[data-test="field-tableNumber"]').setValue("A1");
+    await wrapper.get('[data-test="field-capacity"]').setValue("6");
+    await wrapper.get('[data-test="dialog-save"]').trigger("click");
+    await flushPromises();
+
+    expect(createSpy).toHaveBeenCalledWith({ tableNumber: "A1", capacity: 6 });
+    // Regression guard: a native <input type="number"> coerces v-model's bound value to a
+    // number once the user types into it, so buildCreateInput must not assume form.capacity
+    // is always a string (form.capacity.trim() throws "trim is not a function" in that case).
+    expect(wrapper.find('[data-test="dialog-save"]').exists()).toBe(false);
+  });
+
   it("shows the QR image and regenerates it", async () => {
     vi.spyOn(tablesApi, "listTables").mockResolvedValue({ tables: [makeTable()] });
     const regenSpy = vi.spyOn(tablesApi, "regenerateTableQr").mockResolvedValue({ table: makeTable({ qrVersion: 2 }) });

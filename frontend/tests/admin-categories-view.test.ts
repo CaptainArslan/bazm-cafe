@@ -51,6 +51,28 @@ describe("admin CategoriesView", () => {
     expect(createSpy).toHaveBeenCalledWith({ name: "Drinks" });
   });
 
+  it("creates a category with a displayOrder value without throwing", async () => {
+    vi.spyOn(categoriesApi, "listCategories").mockResolvedValue({ categories: [] });
+    const createSpy = vi
+      .spyOn(categoriesApi, "createCategory")
+      .mockResolvedValue({ category: makeCategory({ displayOrder: 3 }) });
+
+    const wrapper = mount(CategoriesView);
+    await flushPromises();
+
+    await wrapper.get('[data-test="new-category"]').trigger("click");
+    await wrapper.get('[data-test="field-name"]').setValue("Drinks");
+    await wrapper.get('[data-test="field-displayOrder"]').setValue("3");
+    await wrapper.get('[data-test="dialog-save"]').trigger("click");
+    await flushPromises();
+
+    expect(createSpy).toHaveBeenCalledWith({ name: "Drinks", displayOrder: 3 });
+    // Regression guard: a native <input type="number"> coerces v-model's bound value to a
+    // number once the user types into it, so buildFormInput must not assume form.displayOrder
+    // is always a string (form.displayOrder.trim() throws "trim is not a function" otherwise).
+    expect(wrapper.find('[data-test="dialog-save"]').exists()).toBe(false);
+  });
+
   it("toggles category visibility", async () => {
     vi.spyOn(categoriesApi, "listCategories").mockResolvedValue({ categories: [makeCategory({ isVisible: true })] });
     const statusSpy = vi

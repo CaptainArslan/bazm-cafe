@@ -60,6 +60,33 @@ describe("admin ProductsView", () => {
     expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ categoryId: "cat1", name: "Espresso", price: 3 }));
   });
 
+  it("creates a product with a preparationMinutes value without throwing", async () => {
+    vi.spyOn(categoriesApi, "listCategories").mockResolvedValue({ categories: [makeCategory()] });
+    vi.spyOn(productsApi, "listAdminProducts").mockResolvedValue({ products: [] });
+    const createSpy = vi
+      .spyOn(productsApi, "createProduct")
+      .mockResolvedValue({ product: makeProduct({ preparationMinutes: 8 }) });
+
+    const wrapper = mount(ProductsView);
+    await flushPromises();
+
+    await wrapper.get('[data-test="new-product"]').trigger("click");
+    await wrapper.get('[data-test="field-name"]').setValue("Espresso");
+    await wrapper.get('[data-test="field-price"]').setValue("3.00");
+    await wrapper.get('[data-test="field-category"]').setValue("cat1");
+    await wrapper.get('[data-test="field-preparationMinutes"]').setValue("8");
+    await wrapper.get('[data-test="dialog-save"]').trigger("click");
+    await flushPromises();
+
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ categoryId: "cat1", name: "Espresso", price: 3, preparationMinutes: 8 }),
+    );
+    // Regression guard: a native <input type="number"> coerces v-model's bound value to a
+    // number once the user types into it, so buildFormInput must not assume form.preparationMinutes
+    // is always a string (form.preparationMinutes.trim() throws "trim is not a function" otherwise).
+    expect(wrapper.find('[data-test="dialog-save"]').exists()).toBe(false);
+  });
+
   it("toggles product availability", async () => {
     vi.spyOn(categoriesApi, "listCategories").mockResolvedValue({ categories: [makeCategory()] });
     vi.spyOn(productsApi, "listAdminProducts").mockResolvedValue({ products: [makeProduct({ isAvailable: true })] });

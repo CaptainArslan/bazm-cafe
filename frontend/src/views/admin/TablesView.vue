@@ -81,7 +81,7 @@ function closeFormDialog(): void {
 
 function buildCreateInput(): CreateTableInput {
   const name = form.name.trim();
-  const capacity = form.capacity.trim();
+  const capacity = String(form.capacity).trim();
   return {
     tableNumber: form.tableNumber.trim(),
     ...(name ? { name } : {}),
@@ -91,7 +91,7 @@ function buildCreateInput(): CreateTableInput {
 
 function buildUpdateInput(): UpdateTableInput {
   const name = form.name.trim();
-  const capacity = form.capacity.trim();
+  const capacity = String(form.capacity).trim();
   return {
     tableNumber: form.tableNumber.trim(),
     ...(name ? { name } : {}),
