@@ -8,6 +8,7 @@ import LoadingState from "../../components/feedback/LoadingState.vue";
 import { deleteMedia, listMedia } from "../../api/media";
 import type { MediaFolder, SafeMedia } from "../../types/media";
 import { toUserSafeErrorMessage } from "../../utils/error-message";
+import { resolveMediaUrl } from "../../utils/media-url";
 
 const FOLDERS: MediaFolder[] = ["general", "categories", "products", "staff", "customers"];
 
@@ -113,7 +114,7 @@ onMounted(load);
 
     <div v-else class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
       <div v-for="item in mediaList" :key="item.path" class="rounded-2xl border border-bz-border bg-white p-3">
-        <img :src="item.url" alt="" class="h-24 w-full rounded-xl object-cover" />
+        <img :src="resolveMediaUrl(item.path)!" alt="" class="h-24 w-full rounded-xl object-cover" />
         <p class="mt-2 truncate text-xs text-bz-ink-500" :title="item.originalName">{{ item.originalName }}</p>
         <button
           type="button"

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { fetchCurrentUser, login, logout, logoutAll, refreshSession } from "../src/api/auth";
+import { configureAuthIntegration } from "../src/api/http";
 
 function mockFetchOnce(body: unknown, ok = true, status = 200) {
   vi.stubGlobal(
@@ -15,6 +16,11 @@ function mockFetchOnce(body: unknown, ok = true, status = 200) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  configureAuthIntegration({
+    getToken: () => null,
+    refresh: () => Promise.resolve(null),
+    onUnauthorized: () => {},
+  });
 });
 
 describe("auth api", () => {
@@ -66,5 +72,43 @@ describe("auth api", () => {
 
     mockFetchOnce({ success: true, message: "ok" });
     await expect(logoutAll()).resolves.toBeUndefined();
+  });
+
+  // Regression guard: /auth/logout, /auth/logout-all, and /auth/me all require a valid access
+  // token server-side (see backend auth.routes.ts). Calling them through the plain `http` client
+  // omits the Authorization header, so the backend rejects with 401 before ever revoking the
+  // refresh-token cookie — logout then silently no-ops and a page refresh logs the user back in.
+  it("logout attaches the bearer access token", async () => {
+    configureAuthIntegration({ getToken: () => "access-123", refresh: () => Promise.resolve(null), onUnauthorized: () => {} });
+    mockFetchOnce({ success: true, message: "ok" });
+
+    await logout();
+
+    const [, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(init.headers.Authorization).toBe("Bearer access-123");
+  });
+
+  it("logoutAll attaches the bearer access token", async () => {
+    configureAuthIntegration({ getToken: () => "access-123", refresh: () => Promise.resolve(null), onUnauthorized: () => {} });
+    mockFetchOnce({ success: true, message: "ok" });
+
+    await logoutAll();
+
+    const [, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(init.headers.Authorization).toBe("Bearer access-123");
+  });
+
+  it("fetchCurrentUser attaches the bearer access token", async () => {
+    configureAuthIntegration({ getToken: () => "access-123", refresh: () => Promise.resolve(null), onUnauthorized: () => {} });
+    mockFetchOnce({
+      success: true,
+      message: "ok",
+      data: { user: { id: "2", name: "Admin One", email: "admin@bazm.test", role: "ADMIN" } },
+    });
+
+    await fetchCurrentUser();
+
+    const [, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(init.headers.Authorization).toBe("Bearer access-123");
   });
 });

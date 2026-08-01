@@ -1,30 +1,31 @@
+import { endpoints } from "./endpoints";
 import { http } from "./http";
 import type { CustomerType } from "../types/enums";
 import type { ResolvedTable, SafeGuestSession } from "../types/session";
 
 export function resolveTable(tableToken: string) {
-  return http.post<{ table: ResolvedTable }>("/guest/tables/resolve", { tableToken });
+  return http.post<{ table: ResolvedTable }>(endpoints.guestSessions.resolveTable, { tableToken });
 }
 
 export function createGuestSession(input: { orderType: CustomerType; tableToken?: string }) {
   return http.post<{ session: SafeGuestSession; reclaimed: boolean }>(
-    "/guest/sessions",
+    endpoints.guestSessions.create,
     input,
   );
 }
 
 export function getCurrentGuestSession() {
-  return http.get<{ session: SafeGuestSession }>("/guest/sessions/current");
+  return http.get<{ session: SafeGuestSession }>(endpoints.guestSessions.current);
 }
 
 export function closeGuestSession() {
   return http.post<{ session: SafeGuestSession; receiptAccessExpiresAt: string | null }>(
-    "/guest/sessions/close",
+    endpoints.guestSessions.close,
   );
 }
 
 export function recoverGuestSession(recoveryCode: string) {
-  return http.post<{ session: SafeGuestSession }>("/guest/sessions/recover", {
+  return http.post<{ session: SafeGuestSession }>(endpoints.guestSessions.recover, {
     recoveryCode,
   });
 }

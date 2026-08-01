@@ -33,6 +33,9 @@ Thumbs.db
 .vite/
 *.tsbuildinfo
 
+# Locally-generated mkcert dev certificates (machine-specific, never commit private keys)
+frontend/certs/
+
 # backend/ has its own .gitignore for its uploads/ and generated Prisma client
 
 # Git worktrees for isolated agent work

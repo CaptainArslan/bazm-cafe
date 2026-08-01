@@ -22,6 +22,12 @@ describe("admin MediaView", () => {
     expect(wrapper.text()).toContain("a.png");
     expect(listSpy).toHaveBeenCalledWith("general");
 
+    // Regression guard: the backend's absolute `url` is built from a hardcoded APP_URL
+    // (http://localhost:3000), which 404s/mixed-content-blocks from any other host or over
+    // HTTPS. The image must use the root-relative `path`, which works through the dev proxy
+    // (and in production) regardless of host or protocol.
+    expect(wrapper.find("img").attributes("src")).toBe("/uploads/media/general/a.png");
+
     await wrapper.get('[data-test="folder-tab-products"]').trigger("click");
     await flushPromises();
 

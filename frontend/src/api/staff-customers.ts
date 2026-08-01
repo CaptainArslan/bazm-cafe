@@ -1,3 +1,4 @@
+import { endpoints } from "./endpoints";
 import { authHttp } from "./http";
 import type { CustomerDetail, SafeCustomer } from "../types/customer";
 
@@ -18,17 +19,17 @@ function buildQuery(query: SearchCustomersQuery): string {
 }
 
 export function searchCustomers(query: SearchCustomersQuery) {
-  return authHttp.get<{ customers: SafeCustomer[] }>(`/customers${buildQuery(query)}`);
+  return authHttp.get<{ customers: SafeCustomer[] }>(`${endpoints.customers.list}${buildQuery(query)}`);
 }
 
 export function getCustomerRecord(customerId: string) {
-  return authHttp.get<{ customer: CustomerDetail }>(`/customers/${customerId}`);
+  return authHttp.get<{ customer: CustomerDetail }>(endpoints.customers.detail(customerId));
 }
 
 export function createCustomerRecord(input: CreateCustomerInput) {
-  return authHttp.post<{ customer: SafeCustomer; matchedByPhone: SafeCustomer[] }>("/customers", input);
+  return authHttp.post<{ customer: SafeCustomer; matchedByPhone: SafeCustomer[] }>(endpoints.customers.list, input);
 }
 
 export function updateCustomerRecord(customerId: string, input: UpdateCustomerInput) {
-  return authHttp.patch<{ customer: SafeCustomer }>(`/customers/${customerId}`, input);
+  return authHttp.patch<{ customer: SafeCustomer }>(endpoints.customers.detail(customerId), input);
 }

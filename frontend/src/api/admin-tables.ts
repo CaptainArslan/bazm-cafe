@@ -1,27 +1,28 @@
+import { endpoints } from "./endpoints";
 import { authHttp } from "./http";
 import type { CreateTableInput, SafeTable, TableOperationalStatus, UpdateTableInput } from "../types/table";
 
 export function listTables() {
-  return authHttp.get<{ tables: SafeTable[] }>("/tables");
+  return authHttp.get<{ tables: SafeTable[] }>(endpoints.tables.list);
 }
 
 export function getTable(tableId: string) {
-  return authHttp.get<{ table: SafeTable }>(`/tables/${tableId}`);
+  return authHttp.get<{ table: SafeTable }>(endpoints.tables.detail(tableId));
 }
 
 export function createTable(input: CreateTableInput) {
-  return authHttp.post<{ table: SafeTable }>("/tables", input);
+  return authHttp.post<{ table: SafeTable }>(endpoints.tables.list, input);
 }
 
 export function updateTable(tableId: string, input: UpdateTableInput) {
-  return authHttp.patch<{ table: SafeTable }>(`/tables/${tableId}`, input);
+  return authHttp.patch<{ table: SafeTable }>(endpoints.tables.detail(tableId), input);
 }
 
 export function updateTableStatus(
   tableId: string,
   input: { operationalStatus: TableOperationalStatus; isActive?: boolean },
 ) {
-  return authHttp.patch<{ table: SafeTable }>(`/tables/${tableId}/status`, input);
+  return authHttp.patch<{ table: SafeTable }>(endpoints.tables.status(tableId), input);
 }
 
 export function getTableQrCode(tableId: string) {
@@ -35,22 +36,22 @@ export function getTableQrCode(tableId: string) {
       qrGeneratedAt: string;
       qrRegeneratedAt: string | null;
     };
-  }>(`/tables/${tableId}/qr-code`);
+  }>(endpoints.tables.qrCode(tableId));
 }
 
 export function regenerateTableQr(tableId: string) {
-  return authHttp.post<{ table: SafeTable }>(`/tables/${tableId}/qr-code/regenerate`);
+  return authHttp.post<{ table: SafeTable }>(endpoints.tables.regenerateQr(tableId));
 }
 
 export function releaseTable(tableId: string) {
   return authHttp.post<{ table: SafeTable; receiptRawToken: string; receiptAccessExpiresAt: string }>(
-    `/tables/${tableId}/release`,
+    endpoints.tables.release(tableId),
   );
 }
 
 export function forceReleaseTable(tableId: string, reason: string) {
   return authHttp.post<{ table: SafeTable; receiptRawToken: string; receiptAccessExpiresAt: string }>(
-    `/tables/${tableId}/force-release`,
+    endpoints.tables.forceRelease(tableId),
     { reason },
   );
 }

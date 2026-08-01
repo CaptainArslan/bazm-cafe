@@ -1,3 +1,4 @@
+import { endpoints } from "./endpoints";
 import { authHttp } from "./http";
 import type { CreateStaffInput, SafeStaff, UpdateStaffInput } from "../types/staff";
 
@@ -13,25 +14,25 @@ function buildQuery(query?: ListStaffQuery): string {
 }
 
 export function listStaff(query?: ListStaffQuery) {
-  return authHttp.get<{ staff: SafeStaff[] }>(`/staff${buildQuery(query)}`);
+  return authHttp.get<{ staff: SafeStaff[] }>(`${endpoints.staff.list}${buildQuery(query)}`);
 }
 
 export function getStaffMember(staffId: string) {
-  return authHttp.get<{ staff: SafeStaff }>(`/staff/${staffId}`);
+  return authHttp.get<{ staff: SafeStaff }>(endpoints.staff.detail(staffId));
 }
 
 export function createStaff(input: CreateStaffInput) {
-  return authHttp.post<{ staff: SafeStaff }>("/staff", input);
+  return authHttp.post<{ staff: SafeStaff }>(endpoints.staff.list, input);
 }
 
 export function updateStaff(staffId: string, input: UpdateStaffInput) {
-  return authHttp.patch<{ staff: SafeStaff }>(`/staff/${staffId}`, input);
+  return authHttp.patch<{ staff: SafeStaff }>(endpoints.staff.detail(staffId), input);
 }
 
 export function updateStaffStatus(staffId: string, isActive: boolean) {
-  return authHttp.patch<{ staff: SafeStaff }>(`/staff/${staffId}/status`, { isActive });
+  return authHttp.patch<{ staff: SafeStaff }>(endpoints.staff.status(staffId), { isActive });
 }
 
 export function updateStaffPassword(staffId: string, password: string) {
-  return authHttp.patch<{ staff: SafeStaff }>(`/staff/${staffId}/password`, { password });
+  return authHttp.patch<{ staff: SafeStaff }>(endpoints.staff.password(staffId), { password });
 }

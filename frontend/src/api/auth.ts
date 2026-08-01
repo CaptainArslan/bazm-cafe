@@ -1,22 +1,23 @@
-import { http } from "./http";
+import { endpoints } from "./endpoints";
+import { authHttp, http } from "./http";
 import type { AuthSessionResult, SafeUser } from "../types/auth";
 
 export function login(input: { email: string; password: string; deviceName?: string }) {
-  return http.post<AuthSessionResult>("/auth/login", input);
+  return http.post<AuthSessionResult>(endpoints.auth.login, input);
 }
 
 export function refreshSession() {
-  return http.post<AuthSessionResult>("/auth/refresh");
+  return http.post<AuthSessionResult>(endpoints.auth.refresh);
 }
 
 export function fetchCurrentUser() {
-  return http.get<{ user: SafeUser }>("/auth/me").then((result) => result.user);
+  return authHttp.get<{ user: SafeUser }>(endpoints.auth.me).then((result) => result.user);
 }
 
 export function logout() {
-  return http.post<void>("/auth/logout");
+  return authHttp.post<void>(endpoints.auth.logout);
 }
 
 export function logoutAll() {
-  return http.post<void>("/auth/logout-all");
+  return authHttp.post<void>(endpoints.auth.logoutAll);
 }
